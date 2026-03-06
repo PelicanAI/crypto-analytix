@@ -456,7 +456,7 @@ Answers set: language level, portfolio source, home screen layout. No 12-step wi
 **Core Features:**
 - CT signal aggregation (Pelican monitors + translates curated accounts)
 - Smart money wallet tracking with Pelican explanations and behavioral archetypes
-- Smart notifications (funding rate extremes, whale moves, analyst calls, correlation breakdowns, assets you don't hold)
+- Pelican Intelligence Alerts: portfolio-relative briefings, not generic price alerts (derivatives intelligence, whale alerts with context, analyst-triggered, cross-asset macro translation alerts, multi-signal convergence alerts)
 - Full performance metrics suite (drawdown, Sharpe ratio, correlation matrix, benchmark comparison vs BTC/ETH/S&P)
 - Wallet connection (paste address for EVM/Solana holdings via Moralis/Helius)
 - News feed filtered by portfolio holdings
@@ -469,7 +469,7 @@ Answers set: language level, portfolio source, home screen layout. No 12-step wi
 - Correlation tracker over time (not just today's snapshot — historical chart of how your portfolio correlation has evolved)
 - Custom dashboard layout (drag and arrange which data appears on home screen — once configured, switching platforms means rebuilding)
 - TradingView chart integration with Pelican overlay (funding rate lines, on-chain support/resistance, analyst targets on the chart)
-- Telegram/Discord bot for Pelican alerts and quick queries outside the app
+- Telegram/Discord bot for Pelican Intelligence Alerts and quick queries outside the app (full briefings delivered to the channels users already live in)
 - X/Twitter integration (connect account, Pelican monitors your timeline for crypto signals from accounts you follow)
 - Leaderboard / anonymous performance sharing (opt-in, returns only not holdings)
 
@@ -534,22 +534,153 @@ Pelican contextualizes: "This wallet accumulated $2M SOL. You hold SOL. Here's w
 
 ---
 
-## Smart Notifications
+## Pelican Intelligence Alerts
 
-All notifications are portfolio-relative. Never generic market spam.
+### The Core Difference
+Every other platform sends alerts. Crypto Analytix sends intelligence briefings.
 
+Traditional alert: "BTC hit $85,000."
+Pelican alert: "BTC hit $85,000 and here's why it matters to YOUR portfolio right now. Three signals converging: whale sell-off on Binance, funding flipped negative for first time in 14 days (historically precedes a bounce within 48h in 4 of 6 instances), and Grega's EW target of $82,400 is now 3% away. Your unrealized gain on BTC is +$3,031 but your trading rules say max acceptable drawdown per position is -10%. Here are your options."
+
+Every alert is a mini Pelican analysis. Not a data point. An intelligence briefing delivered to your phone.
+
+### Alert Taxonomy
+
+**Portfolio-Relative Alerts (nobody else has these):**
 ```
-funding_rate_extreme:   "SOL funding at +0.05%, highest in 30 days. You hold SOL."
-whale_accumulation:     "Top wallet buying ETH aggressively. You hold ETH."
-analyst_call:           "Grega posted EW count on BTC targeting $95K. You hold BTC."
-correlation_breakdown:  "SOL and ETH usually move together but diverged today."
-price_at_key_level:     "BTC hit $87.5K support identified by Blake."
-what_you_dont_hold:     "A token correlated to your portfolio just moved 15%."
-liquidation_risk:       "Funding rates suggest crowded longs on your largest position."
-daily_brief_ready:      "Your morning brief is ready. 3 things to know."
+portfolio_drawdown:       "Your portfolio just crossed below your max drawdown threshold. 
+                          Here's what's driving it and what your options are."
+
+correlation_spike:        "Your BTC correlation increased to 0.95. You're basically 
+                          holding leveraged BTC right now. Here's what that means 
+                          for your risk if BTC drops 10%."
+
+position_reversal:        "Your best-performing position (ETH) just reversed, giving 
+                          back 40% of its gains in 4 hours. On-chain data shows 
+                          exchange inflows spiked. Here's the full picture."
+
+good_exit_confirmation:   "A position you exited last week (SOL at $142) is now at $128. 
+                          Your exit was well-timed. Here's the data that validated 
+                          your decision — useful for building your pattern recognition."
+
+concentration_warning:    "BTC is now 72% of your portfolio after today's rally. Your 
+                          max allocation rule is 60%. Consider whether to rebalance."
+
+rule_violation:           "You just bought SOL while funding is +0.018%. Your trading 
+                          rule says never enter when funding >0.02%. You're close to 
+                          the threshold. Here's the historical context for what happens 
+                          at these levels."
 ```
 
-User configures which types they want. Default: all on for Pro, limited for Lite.
+**Analyst-Triggered Alerts:**
+```
+analyst_call_on_holding:  "Blake just published a bearish harmonic on BTC. You hold 
+                          BTC. His harmonic calls have 71% accuracy. Here's the 
+                          pattern he's seeing and what it means for your position."
+
+multi_analyst_alignment:  "Two analysts (Grega + Blake) independently turned bearish 
+                          on ETH using different methodologies. When they align, 
+                          directional accuracy is historically 83%. You hold ETH."
+
+analyst_target_hit:       "BTC just reached Grega's Wave 4 target of $78,200 that 
+                          he published 3 days ago. He's calling for a Wave 5 rally 
+                          to $105K from here. You hold 0.52 BTC."
+```
+
+**Derivatives Intelligence Alerts:**
+```
+oi_extreme:               "Open interest on BTC perps just hit an all-time high. 
+                          Last 3 times this happened, a 10%+ move followed within 
+                          72 hours. Direction was 2 up, 1 down. You're long BTC."
+
+funding_with_context:     "SOL funding rate crossed your +0.01% threshold. But here's 
+                          context most platforms won't give you: the last time funding 
+                          was this elevated while exchange outflows were also increasing, 
+                          price actually went UP 12% (short squeeze). The signals 
+                          partially conflict."
+
+liquidation_cascade:      "A $340M liquidation cascade just hit BTC longs. Price 
+                          dropped 4.2% in 8 minutes. Your portfolio is down $1,890. 
+                          Historically, cascades of this size mark a local bottom 
+                          within 4-12 hours. Here's the funding rate reset context."
+```
+
+**Whale and On-Chain Alerts:**
+```
+smart_money_move:         "A wallet that's been right 78% of the time just bought $4M 
+                          of ETH. You hold ETH. Here's their track record and what 
+                          happened last 3 times they accumulated at this rate."
+
+exchange_flow_anomaly:    "Exchange inflows for ETH just spiked 300% above 30-day 
+                          average. This usually means selling pressure incoming. 
+                          You hold ETH. However, the last time inflows spiked 
+                          while funding was negative, it was institutions repositioning, 
+                          not dumping."
+
+whale_sell_on_holding:    "The 'Accumulation Whale' wallet (78% win rate) that bought 
+                          $4M ETH last week just moved 50% of it to Binance. This 
+                          often precedes selling. Their average hold was 14 days, 
+                          it's been 8. Could be early exit or partial profit-taking."
+```
+
+**Cross-Asset Translation Alerts (ForexAnalytix Integration):**
+```
+macro_crypto_correlation: "DXY just broke below 104 support. Blake flagged this in his 
+                          macro read this morning. Historically when DXY breaks support, 
+                          BTC rallies 8-15% over the following 2 weeks. You hold BTC. 
+                          Here's how derivatives are positioned relative to this shift."
+
+yield_curve_signal:       "10Y yield inverted against 2Y. This macro signal has preceded 
+                          crypto rallies in 3 of the last 4 instances. Blake's team is 
+                          watching this. Here's the derivatives positioning context."
+
+risk_sentiment_shift:     "Blake's risk sentiment model just flipped to 'risk-on' based 
+                          on VIX, credit spreads, and equity momentum. When this model 
+                          turns risk-on, BTC has a 72% probability of positive returns 
+                          over the following 30 days. Your portfolio is positioned for this."
+```
+
+### Alert Delivery UX
+
+The notification experience is as important as the content:
+
+1. **Push notification** = the headline. "SOL dropped 8% — 3 signals converging on your position."
+2. **User taps** → app opens directly into the Pelican panel with the FULL analysis pre-loaded. No dashboard. No loading. The intelligence briefing is already there.
+3. **Pre-loaded context**: The `notification_history` table stores a `pelican_context` jsonb column with the complete Pelican analysis. When the user taps, the panel loads from this cached analysis instead of regenerating (saves credits, eliminates latency).
+4. **Follow-up capable**: The panel is a live Pelican conversation. After reading the briefing, the user can ask "Should I sell?" or "What happened last time?" and Pelican responds with full portfolio context.
+5. **Expandable in-app**: If the user is already in the app, the alert appears as a card in the notification center with the headline. Tapping expands the full Pelican analysis inline, or opens the panel.
+
+### Alert Configuration
+
+Users configure which alert categories they want (notification_preferences table):
+- Pro tier: all categories enabled by default
+- Lite tier: portfolio-relative + analyst-triggered only
+- Free tier: daily brief notification only
+
+Per-asset overrides: "I want derivatives alerts for SOL and BTC but not ETH."
+Frequency controls: "Don't send me more than 5 alerts per day" or "Batch non-urgent alerts into a digest every 4 hours."
+Quiet hours: "No alerts between 11 PM and 7 AM except for portfolio drawdown >5%."
+
+### Database Impact
+
+Update notification_history table (when building this feature) to include:
+```
+notification_history:
+  + pelican_context (jsonb)          -- Full cached Pelican analysis for instant panel load
+  + pelican_conversation_id (uuid)   -- Links to pelican_conversations for follow-up
+  + alert_category (text)            -- portfolio/analyst/derivatives/onchain/macro
+  + severity (text)                  -- info/warning/critical
+  + assets_involved (text[])         -- Which of user's holdings are relevant
+  + expired (bool default false)     -- Alert no longer relevant (price moved away, etc.)
+```
+
+### Implementation Phasing
+
+Phase 1 (Sessions 1-6): Build the notification_preferences table (done), the Pelican panel with pre-loaded context (Session 5), and the notification UI patterns.
+
+Phase 2: Build the alert trigger engine. Each alert type has a trigger condition, a Pelican prompt template, and a delivery pipeline. The trigger monitors data sources (Coinalyze for derivatives, on-chain APIs for whale moves, ForexAnalytix feed for macro), evaluates conditions against the user's portfolio, generates the Pelican briefing, caches it, and delivers via push notification + in-app notification center.
+
+Phase 3: Advanced alert types (cross-asset translation, multi-analyst alignment, behavioral pattern alerts).
 
 ---
 
@@ -698,7 +829,13 @@ notification_preferences: id, user_id, funding_rate (bool),
   trading_rule_violations (bool)
 
 notification_history: id, user_id, type, title, body,
-  asset, read (bool), created_at
+  asset, read (bool), created_at,
+  pelican_context (jsonb),              -- Full cached Pelican analysis for instant panel load
+  pelican_conversation_id (uuid),       -- Links to pelican_conversations for follow-up
+  alert_category (text),                -- portfolio/analyst/derivatives/onchain/macro
+  severity (text),                      -- info/warning/critical
+  assets_involved (text[]),             -- Which of user's holdings are relevant
+  expired (bool)                        -- Alert no longer relevant
 
 -- Education
 education_progress: id, user_id, module_slug, completed (bool),

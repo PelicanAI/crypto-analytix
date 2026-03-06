@@ -3,9 +3,9 @@
 ## Phase A: Foundation
 - [x] Project init, deps, directory structure
 - [x] Design system, globals.css
-- [ ] Layouts, auth, middleware, providers
-- [ ] Navigation, shared components, utilities, types
-- [ ] `npm run build` must pass
+- [x] Layouts, auth, middleware, providers
+- [x] Navigation, shared components, utilities, types
+- [x] `npm run build` must pass
 
 ## Phase B: Pelican Panel
 - [ ] use-pelican-panel.ts, use-streaming-chat.ts

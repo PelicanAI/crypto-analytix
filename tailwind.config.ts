@@ -30,6 +30,8 @@ const config: Config = {
           DEFAULT: "var(--accent-primary)",
           hover: "var(--accent-hover)",
           muted: "var(--accent-muted)",
+          glow: "var(--accent-glow)",
+          dim: "var(--accent-dim)",
         },
         data: {
           positive: "var(--data-positive)",

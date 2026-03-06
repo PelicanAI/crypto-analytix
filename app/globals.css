@@ -25,10 +25,16 @@
   --text-secondary: #9898a6;
   --text-muted: #5a5a6e;
 
-  /* === Accent — teal for crypto identity === */
-  --accent-primary: #0f7b6c;
-  --accent-hover: #10a88f;
-  --accent-muted: rgba(15, 123, 108, 0.15);
+  /* === Accent — cyan-blue matching the CryptoAnalytix logo === */
+  --accent-primary: #1DA1C4;
+  --accent-hover: #25BFDF;
+  --accent-muted: rgba(29, 161, 196, 0.15);
+  --accent-glow: rgba(29, 161, 196, 0.25);
+  --accent-dim: rgba(29, 161, 196, 0.08);
+
+  /* === Accent gradients === */
+  --accent-gradient: linear-gradient(135deg, #1A6FB5, #25BFDF);
+  --accent-gradient-subtle: linear-gradient(135deg, rgba(29, 161, 196, 0.2), rgba(37, 191, 223, 0.1));
 
   /* === Data colors — ONLY for financial data === */
   --data-positive: #22c55e;
@@ -356,15 +362,15 @@
 }
 
 /* ============================================================
-   SELECTION — teal highlight
+   SELECTION — cyan-blue highlight
    ============================================================ */
 
 ::selection {
-  background-color: rgba(15, 123, 108, 0.4);
+  background-color: rgba(29, 161, 196, 0.4);
   color: var(--text-primary);
 }
 
 ::-moz-selection {
-  background-color: rgba(15, 123, 108, 0.4);
+  background-color: rgba(29, 161, 196, 0.4);
   color: var(--text-primary);
 }
