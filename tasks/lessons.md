@@ -21,3 +21,15 @@
 8. **Loading skeleton shimmer injection** — Self-injecting CSS keyframes via `useEffect` avoids dependency on globals.css when multiple agents own different CSS concerns. Pattern: check `document.getElementById(keyframe-id)` before injecting.
 
 9. **`color-mix(in srgb, ...)` for dynamic opacity** — Used in severity-tag to derive 12% and 20% opacity backgrounds from any CSS color value. Works in all modern browsers, avoids needing separate rgba variants for each color.
+
+## Session 5 — Pelican Panel
+
+10. **`use-streaming-chat.ts` is READ-ONLY** — This file is fragile and works. Do not modify in future sessions. The streaming hook handles SSE parsing, AbortController cleanup, mock mode, and retry logic. Any change risks breaking streaming. Lesson from Pelican Trading AI v2/v3.
+
+11. **Three-layer Pelican architecture** — Layer 1 (`lib/pelican.ts`) is a pure utility callable from API routes/cron jobs. Layer 2 (`hooks/use-streaming-chat.ts`) wraps it for React streaming. Layer 3 (`hooks/use-pelican-panel.ts` + `components/pelican-panel/`) is panel-specific UI. Future consumers (alerts, daily brief, community bot) use Layer 1 directly without needing the panel.
+
+12. **Streaming text must flow through state** — When adding `streamingText` to the panel architecture, it must be included in `PelicanPanelState` type, exposed from the hook, and included in the noop fallback. Missing it in the noop causes a TypeScript error at build time.
+
+13. **Features layout must be 'use client' for PelicanPanelProvider** — The `(features)/layout.tsx` uses React context (PelicanPanelProvider), which requires client-side rendering. Use the inner component pattern: `FeaturesLayout` wraps with Provider, `FeaturesContent` consumes the context.
+
+14. **Panel content push, not overlay** — Desktop panel uses `marginRight: 440px` on the main content area so content pushes left. The panel doesn't overlay content. Mobile uses a bottom sheet with backdrop overlay instead.

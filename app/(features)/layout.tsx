@@ -1,8 +1,14 @@
+'use client'
+
 import Sidebar from '@/components/navigation/sidebar'
 import HeaderBar from '@/components/navigation/header-bar'
 import MobileNav from '@/components/navigation/mobile-nav'
+import PelicanChatPanel from '@/components/pelican-panel/pelican-chat-panel'
+import { PelicanPanelProvider, usePelicanPanelContext } from '@/providers/pelican-panel-provider'
 
-export default function FeaturesLayout({ children }: { children: React.ReactNode }) {
+function FeaturesContent({ children }: { children: React.ReactNode }) {
+  const { state } = usePelicanPanelContext()
+
   return (
     <div className="min-h-screen flex" style={{ backgroundColor: 'var(--bg-base)' }}>
       {/* Atmosphere layer */}
@@ -16,20 +22,34 @@ export default function FeaturesLayout({ children }: { children: React.ReactNode
         }}
       />
 
-      {/* Sidebar -- hidden on mobile */}
+      {/* Sidebar — hidden on mobile */}
       <Sidebar />
 
       {/* Main content area */}
       <div className="flex-1 flex flex-col min-h-screen md:ml-[60px] relative z-10">
         <HeaderBar />
 
-        <main className="flex-1 overflow-y-auto transition-[margin] duration-300 ease-out pb-20 md:pb-0">
+        <main
+          className="flex-1 overflow-y-auto transition-[margin] duration-300 ease-out pb-20 md:pb-0"
+          style={{ marginRight: state.isOpen ? 440 : 0 }}
+        >
           {children}
         </main>
       </div>
 
       {/* Mobile bottom nav */}
       <MobileNav />
+
+      {/* Pelican AI panel */}
+      <PelicanChatPanel />
     </div>
+  )
+}
+
+export default function FeaturesLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <PelicanPanelProvider>
+      <FeaturesContent>{children}</FeaturesContent>
+    </PelicanPanelProvider>
   )
 }
