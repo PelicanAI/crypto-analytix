@@ -1,6 +1,6 @@
 # Crypto Analytix — Issues & Tech Debt Tracker
 
-Last updated: March 6, 2026 (after Session 5)
+Last updated: March 6, 2026 (after Session 5.5 — P0 fix session)
 
 ## Priority Levels
 - **P0 — Fix before next session.** Will cause bugs or security issues if left.
@@ -12,40 +12,7 @@ Last updated: March 6, 2026 (after Session 5)
 
 ## P0 — Fix Before Session 6
 
-### 1. API route stubs need auth scaffolding
-**Files:** All files in `app/api/*/route.ts` and `app/api/*/*/route.ts`
-**Issue:** Every API route returns a placeholder `{ message: 'portfolio' }` with zero auth checking. When Session 6 implements the portfolio route for real, the pattern needs to be established from the start.
-**Fix:** Add auth check boilerplate to every stub route now. Even while returning placeholder data, the pattern should be there:
-```typescript
-import { NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase/server'
-
-export const maxDuration = 30
-
-export async function GET() {
-  const supabase = await createServerClient()
-  const { data: { user }, error } = await supabase.auth.getUser()
-  
-  if (error || !user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
-  // TODO: Implement in Session X
-  return NextResponse.json({ message: 'portfolio', user_id: user.id })
-}
-```
-**Why P0:** If Session 6 copies the pattern from existing stubs, it copies the pattern WITHOUT auth. Establishing the auth-first pattern now prevents every future session from potentially shipping unprotected routes.
-
-### 2. Stub hooks missing 'use client' directive
-**Files:** `hooks/use-portfolio.ts`, `hooks/use-credits.ts`, `hooks/use-snaptrade.ts`, `hooks/use-notifications.ts`, `hooks/use-watchlist.ts`
-**Issue:** These stubs export plain functions without `'use client'`. When they're implemented with React hooks (useState, useEffect, etc.), the build will fail if the directive is missing.
-**Fix:** Add `'use client'` to the top of each stub file now.
-**Why P0:** Someone implementing these hooks might forget to add the directive and waste time debugging a build error.
-
-### 3. Panel width is a magic number in two files
-**Files:** `app/(features)/layout.tsx` (line: `marginRight: state.isOpen ? 440 : 0`), `components/pelican-panel/pelican-chat-panel.tsx` (width: 440px)
-**Fix:** Add `PELICAN_PANEL_WIDTH = 440` to `lib/constants.ts`. Import and use in both files.
-**Why P0:** If someone changes the panel width during Session 6 testing and only updates one file, the layout breaks with a gap or overlap. Takes 2 minutes to fix now, prevents a confusing bug later.
+(No open P0 items)
 
 ---
 
@@ -57,13 +24,7 @@ export async function GET() {
 **Fix:** Use `var(--accent-dim)` and `var(--accent-glow)` or create a dedicated `--atmosphere-primary` and `--atmosphere-secondary` token in globals.css.
 **Why P1:** Not breaking anything, but violates the "all colors from CSS variables" principle that makes brand changes a one-file edit.
 
-### 5. console.log in tracking.ts
-**File:** `lib/tracking.ts` line 3
-**Issue:** Uses `console.log` instead of `logger.info()` for dev-mode tracking events. Inconsistent with the "no console.log, use logger" rule.
-**Fix:** Replace with `logger.info(\`[TRACK] ${name}\`, properties)`.
-**Why P1:** Minor consistency issue. Won't break anything but sets a bad precedent if other developers see console.log in an approved file.
-
-### 6. Duplicate pelican-icon.tsx
+### 5. Duplicate pelican-icon.tsx
 **Files:** `components/shared/pelican-icon.tsx` (99 lines, real implementation) AND `components/pelican-panel/pelican-icon.tsx` (unclear if duplicate or different)
 **Issue:** Two pelican icon files exist. Need to verify they're not duplicates. If they are, one should be deleted and all imports pointed to the canonical version.
 **Fix:** Check both files. Keep one canonical version in `components/shared/pelican-icon.tsx`. Delete the duplicate. Update imports.
@@ -160,4 +121,7 @@ export async function GET() {
 
 | # | Issue | Fixed | Session |
 |---|-------|-------|---------|
-| — | — | — | — |
+| 1 | API route stubs need auth scaffolding | 2026-03-06 | Session 5.5 (P0 fix) |
+| 2 | Stub hooks missing 'use client' directive | 2026-03-06 | Session 5.5 (P0 fix) |
+| 3 | Panel width is a magic number in two files | 2026-03-06 | Session 5.5 (P0 fix) |
+| 5 | console.log in tracking.ts | 2026-03-06 | Session 5.5 (P0 fix) |
