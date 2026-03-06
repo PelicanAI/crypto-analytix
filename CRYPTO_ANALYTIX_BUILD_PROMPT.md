@@ -264,7 +264,7 @@ Create globals.css implementing the full design system: oklch color palette from
 
 Create the Geist Sans + Geist Mono font loading in the root layout via next/font.
 
-Verify: npm run build passes with zero errors.
+Verify: npm run build passes with zero errors. Update ISSUES_AND_TECH_DEBT.md (resolve fixed items, add new issues found).
 
 ---
 
@@ -282,7 +282,7 @@ Create RPC functions: get_crypto_context(p_user_id), handle_new_user() trigger. 
 
 Create supabase/setup-database.sql as single-file reference.
 
-Verify: query pg_policies via MCP to confirm every table has RLS.
+Verify: query pg_policies via MCP to confirm every table has RLS. Update ISSUES_AND_TECH_DEBT.md.
 
 ---
 
@@ -304,7 +304,7 @@ Create root layout with Geist fonts, ThemeProvider, metadataBase, metadata.
 
 Create (marketing)/layout.tsx with ForceLightTheme. Create (features)/layout.tsx (will add sidebar + Pelican in Session 4).
 
-Verify: npm run build passes. Auth redirects work. Terms enforcement works.
+Verify: npm run build passes. Auth redirects work. Terms enforcement works. Update ISSUES_AND_TECH_DEBT.md.
 
 ---
 
@@ -322,7 +322,7 @@ Build ALL shared components: pelican-icon (THE most important UI element — hov
 
 Build ALL utilities: cn(), formatters (currency/percent/number with tabular-nums), constants, logger (no console.log), sanitize, all TypeScript types.
 
-Verify: npm run build passes. App renders with sidebar, header, empty portfolio page with skeleton. Mobile responsive at 375px, 768px, 1024px.
+Verify: npm run build passes. App renders with sidebar, header, empty portfolio page with skeleton. Mobile responsive at 375px, 768px, 1024px. Update ISSUES_AND_TECH_DEBT.md.
 
 ---
 
@@ -342,7 +342,7 @@ Update (features)/layout.tsx: wrap with PelicanPanelProvider, add PelicanChatPan
 
 Add temporary test button on portfolio page to verify panel opens, streams, closes, works on mobile.
 
-Verify: npm run build passes. Panel works end-to-end.
+Verify: npm run build passes. Panel works end-to-end. Update ISSUES_AND_TECH_DEBT.md.
 
 ---
 
@@ -360,7 +360,7 @@ Build use-portfolio.ts: SWR hook, 60s refresh, computed totals.
 
 Build portfolio page: progressive disclosure Level 1 (holdings table with sparklines, P&L, funding rates, Pelican icons), empty state for no connection, loading skeletons. Every row Pelican icon calls openWithPrompt with full position context.
 
-Verify: npm run build passes. Portfolio renders (mock or real data). Pelican icons work.
+Verify: npm run build passes. Portfolio renders (mock or real data). Pelican icons work. Update ISSUES_AND_TECH_DEBT.md.
 
 ---
 
@@ -370,7 +370,7 @@ Read CLAUDE.md Daily Brief and What I Missed sections.
 
 Build brief API route, use-brief.ts hook, brief page with 2x2 card grid, severity tags, Pelican icons. What I Missed overlay for >4h absence. Use mock data for brief content.
 
-Verify: npm run build passes. Brief renders. What I Missed overlay works.
+Verify: npm run build passes. Brief renders. What I Missed overlay works. Update ISSUES_AND_TECH_DEBT.md.
 
 ---
 
@@ -380,7 +380,7 @@ Read CLAUDE.md Signal Aggregation section.
 
 Build signal API route, use-signals.ts, signals page with filter tabs (All, Analysts, CT, On-Chain). CT signal cards with original + translation. Analyst cards with methodology. Wallet signals with track record. Pelican icons everywhere. Mock data.
 
-Verify: npm run build passes. Signals page works. Filters work. Pelican icons work.
+Verify: npm run build passes. Signals page works. Filters work. Pelican icons work. Update ISSUES_AND_TECH_DEBT.md.
 
 ---
 
@@ -390,7 +390,7 @@ Read CLAUDE.md onboarding and education sections.
 
 Build onboarding page (3 questions, stores in user_credits, redirects to portfolio). Build education page with 7 modules. Build crypto-terms.json glossary. Build glossary tooltip component. Education progress tracking.
 
-Verify: npm run build passes. Onboarding works. Education renders. Glossary tooltips work.
+Verify: npm run build passes. Onboarding works. Education renders. Glossary tooltips work. Update ISSUES_AND_TECH_DEBT.md.
 
 ---
 
@@ -400,7 +400,7 @@ Read CLAUDE.md community, calendar, watchlist sections.
 
 Build community chat (Supabase Realtime, Pelican @mention, never reveals portfolio data). Crypto calendar (event types, Pelican icons). Watchlist with multi-type alerts. Settings page (account, connections, preferences).
 
-Verify: npm run build passes. All pages functional.
+Verify: npm run build passes. All pages functional. Update ISSUES_AND_TECH_DEBT.md.
 
 ---
 
@@ -409,6 +409,7 @@ Verify: npm run build passes. All pages functional.
 - Read CLAUDE.md at session start. Every time.
 - npm run build must pass before marking any phase complete.
 - Update tasks/lessons.md after every bug, mistake, or discovery.
+- Update ISSUES_AND_TECH_DEBT.md at the end of every session: move resolved items to the Resolved table with date and session number, add any new issues discovered with priority level (P0/P1/P2/P3). Never close a session without checking this file.
 - No any TypeScript types. Use proper types or unknown.
 - No console.log in production. Use lib/logger.ts.
 - Every number: font-mono tabular-nums. No exceptions.
@@ -424,6 +425,7 @@ Verify: npm run build passes. All pages functional.
 ## Reference Materials
 
 - CLAUDE.md — Product spec, architecture, all rules
+- ISSUES_AND_TECH_DEBT.md — Running tech debt tracker. Read at session start, update at session end.
 - design-system/MASTER.md — Visual source of truth (if generated)
 - 21st.dev (https://21st.dev/community/components) — Component patterns
 - Laws of UX (https://lawsofux.com/) — UX principles

@@ -1,3 +1,5 @@
+export const PELICAN_PANEL_WIDTH = 440
+
 export const APP_NAME = 'Crypto Analytix'
 export const APP_DESCRIPTION = 'AI-powered crypto analysis for traditional traders'
 

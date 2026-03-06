@@ -5,6 +5,7 @@ import HeaderBar from '@/components/navigation/header-bar'
 import MobileNav from '@/components/navigation/mobile-nav'
 import PelicanChatPanel from '@/components/pelican-panel/pelican-chat-panel'
 import { PelicanPanelProvider, usePelicanPanelContext } from '@/providers/pelican-panel-provider'
+import { PELICAN_PANEL_WIDTH } from '@/lib/constants'
 
 function FeaturesContent({ children }: { children: React.ReactNode }) {
   const { state } = usePelicanPanelContext()
@@ -31,7 +32,7 @@ function FeaturesContent({ children }: { children: React.ReactNode }) {
 
         <main
           className="flex-1 overflow-y-auto transition-[margin] duration-300 ease-out pb-20 md:pb-0"
-          style={{ marginRight: state.isOpen ? 440 : 0 }}
+          style={{ marginRight: state.isOpen ? PELICAN_PANEL_WIDTH : 0 }}
         >
           {children}
         </main>

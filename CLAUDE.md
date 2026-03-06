@@ -82,8 +82,9 @@ The "What I Missed" feature creates a daily reason to open the app. The Daily Br
 
 ### 3. Self-Improvement Loop
 - After ANY correction: update `tasks/lessons.md` with the pattern
+- After EVERY session: update `ISSUES_AND_TECH_DEBT.md` with resolved items and new discoveries
 - Write rules that prevent the same mistake
-- Review lessons at session start
+- Review both files at session start
 
 ### 4. Verification Before Done
 - `npm run build` must pass before any commit
@@ -101,6 +102,14 @@ The "What I Missed" feature creates a daily reason to open the app. The Daily Br
 - Marketing copy: write it yourself, have Claude Code place it.
 - Maintaining existing patterns: explicitly say "read the closest existing implementation first"
 - Complex dark theme CSS: gradient stacking, oklch, z-index need multiple iterations
+
+### 7. Tech Debt Tracking
+- After EVERY session: read and update `ISSUES_AND_TECH_DEBT.md`
+- Move resolved items to the Resolved table with date and session number
+- Add any new issues discovered during the session
+- Assign priority: P0 (fix before next session), P1 (fix this week), P2 (fix before launch), P3 (improve eventually)
+- Never close a session without checking this file
+- This is as important as `npm run build` passing. A clean build with growing hidden debt is a false signal.
 
 ---
 
@@ -977,6 +986,8 @@ SENTRY_DSN
 - `globals.css` — Design tokens
 - `package.json` — Dependencies
 - `middleware.ts` — Auth + routing
+- `ISSUES_AND_TECH_DEBT.md` — Tech debt tracker (read at start, update at end of every session)
+- `tasks/lessons.md` — Lessons learned (update after every bug/fix)
 
 ### Feature-Specific (One Agent Each)
 - `app/(features)/portfolio/` — Portfolio page

@@ -7,6 +7,7 @@ import { usePelicanPanelContext } from '@/providers/pelican-panel-provider'
 import { useMobile } from '@/hooks/use-mobile'
 import { LiveDot } from '@/components/shared/live-dot'
 import { PELICAN_CONTEXTS } from '@/types/pelican'
+import { PELICAN_PANEL_WIDTH } from '@/lib/constants'
 
 // ─── Context title mapping ───────────────────────────────────────
 
@@ -135,8 +136,6 @@ function PelicanAvatar() {
 }
 
 // ─── Constants ───────────────────────────────────────────────────
-
-const PANEL_WIDTH = 440
 
 const desktopVariants = {
   hidden: { x: '100%' },
@@ -404,7 +403,7 @@ export default function PelicanChatPanel() {
             transition={panelTransition}
             className="fixed top-0 right-0 flex flex-col z-30"
             style={{
-              width: PANEL_WIDTH,
+              width: PELICAN_PANEL_WIDTH,
               height: '100vh',
               background: 'rgba(12, 12, 18, 0.95)',
               backdropFilter: 'blur(30px) saturate(1.3)',
