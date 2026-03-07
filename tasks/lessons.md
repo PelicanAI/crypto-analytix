@@ -41,3 +41,13 @@
 16. **Stub component cleanup** — When replacing stub components (e.g., `signal-card.tsx` returning `null`) with real implementations using different file names (e.g., `analyst-card.tsx`), delete the old stubs. Otherwise imports from other files may reference the dead stubs and cause confusion. Always check for imports of deleted files.
 
 17. **Mock data fallback pattern for API routes** — API routes that query Supabase tables can fall back to mock data when tables are empty. This enables full UI development without requiring data pipelines. Pattern: query DB → if empty → return mock data. The `?mock=true` query param forces mock mode regardless. Remove when real data flows are built.
+
+## Session 8 — Onboarding + Education + Glossary
+
+18. **Agent team file ownership prevents collisions** — Session 8 used 4 parallel agents with strict file ownership. No file was touched by more than one agent. This eliminated the collision issues from Session 4 (lesson 7). Agent file ownership: glossary (lib/glossary/, components/shared/glossary-tooltip.tsx), onboarding (app/onboarding/, hooks/use-onboarding.ts), API routes (app/api/education/, lib/mock-data.ts additions), education page (app/(features)/learn/, hooks/use-education.ts).
+
+19. **Supabase upsert column mismatches** — The onboarding hook initially used `updated_at` in the upsert payload, but the `onboarding_responses` table schema has `completed_at`, not `updated_at`. Supabase silently ignores unknown columns in some cases but this creates a hidden bug where the timestamp is never set. Always verify column names against the actual table schema before writing upsert/insert payloads.
+
+20. **Context providers nest inside PelicanPanelProvider** — New providers (GlossaryProvider) go inside PelicanPanelProvider, not outside. This ensures any provider that needs Pelican panel context can access it. The nesting order in features layout: PelicanPanelProvider → GlossaryProvider → FeaturesContent.
+
+21. **Mock education content is product content** — The 7 education modules with TradFi-bridged explanations are core product content, not throwaway mock data. When seeding the database, use the exact same content from MOCK_EDUCATION_MODULES. The TradFi analogs (e.g., "funding rate is like overnight repo rate") are the product's key differentiator from generic crypto education.

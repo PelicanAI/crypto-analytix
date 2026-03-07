@@ -1,6 +1,6 @@
 # Crypto Analytix — Issues & Tech Debt Tracker
 
-Last updated: March 7, 2026 (after Session 7 — Signals intelligence feed)
+Last updated: March 7, 2026 (after Session 8 — Onboarding + Education + Glossary)
 
 ## Priority Levels
 - **P0 — Fix before next session.** Will cause bugs or security issues if left.
@@ -113,6 +113,24 @@ Converted `components/pelican-panel/pelican-icon.tsx` to a re-export of the cano
 **Partial fix Session 6:** `use-portfolio.ts` and `use-snaptrade.ts` now fully typed with SWR.
 **Partial fix Session 7:** `use-signals.ts` now fully typed with SWR, filter state, and cursor pagination.
 
+### 24. Education API always uses mock data
+**File:** `app/api/education/route.ts`, `hooks/use-education.ts`
+**Issue:** The hook hardcodes `mock=true` in the query params. The API route falls back to mock data when education_modules table is empty. Correct for development.
+**Fix:** Remove `mock=true` from the hook URL builder when education modules are seeded into the database via Supabase MCP.
+**When:** When DB migrations are run to seed education_modules table.
+
+### 25. Onboarding responses table not yet created in Supabase
+**File:** `hooks/use-onboarding.ts`
+**Issue:** The `onboarding_responses` table and `education_modules` / `education_progress` schema updates need to be applied via Supabase MCP migrations. The onboarding flow will fail to save responses until this is done. The flow still works (redirects to /portfolio) but data isn't persisted.
+**Fix:** Run the SQL migrations from the Session 8 build prompt via Supabase MCP.
+**When:** Before testing the full onboarding-to-education pipeline.
+
+### 26. GlossaryTooltip not yet integrated into education content
+**File:** `app/(features)/learn/page.tsx`
+**Issue:** The GlossaryTooltip component exists and the GlossaryProvider is wired into the features layout, but education module content sections don't yet wrap crypto terms in GlossaryTooltip. The content is plain text from the mock data.
+**Fix:** When rendering section body text, parse for known glossary terms and wrap them in GlossaryTooltip. This requires a text-parsing utility that finds term matches in body text.
+**When:** Polish pass or next session.
+
 ### 22. Signals API always uses mock data
 **File:** `app/api/signals/route.ts`, `hooks/use-signals.ts`
 **Issue:** The hook hardcodes `mock=true` in the query params. The API route falls back to mock data when tables are empty (which they are since no real data has been seeded yet). This is correct for development but needs to be removed when real data pipelines are built.
@@ -142,6 +160,11 @@ Converted `components/pelican-panel/pelican-icon.tsx` to a re-export of the cano
 | 5 | console.log in tracking.ts (replaced with logger.info) | Mar 6, 2026 | P0 Fix Session |
 | 21 | shadcn v4 init broke build (Tailwind v4 syntax in v3 project) | Mar 6, 2026 | Pre-Session 6 |
 | 6 | Duplicate pelican-icon.tsx (re-exported) | Mar 6, 2026 | Session 6 |
+| 19 | Placeholder use-education.ts hook | Mar 7, 2026 | Session 8 |
+| — | Onboarding stub page (skip-only) | Mar 7, 2026 | Session 8 |
+| — | Education stub page (empty state only) | Mar 7, 2026 | Session 8 |
+| — | Education API stub (returns message only) | Mar 7, 2026 | Session 8 |
+| — | Glossary crypto-terms.json empty | Mar 7, 2026 | Session 8 |
 
 ---
 

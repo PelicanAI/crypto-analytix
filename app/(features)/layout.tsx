@@ -7,6 +7,7 @@ import MobileNav from '@/components/navigation/mobile-nav'
 import PelicanChatPanel from '@/components/pelican-panel/pelican-chat-panel'
 import WhatIMissed from '@/components/brief/what-i-missed'
 import { PelicanPanelProvider, usePelicanPanelContext } from '@/providers/pelican-panel-provider'
+import { GlossaryProvider } from '@/lib/glossary/glossary-provider'
 import { PELICAN_PANEL_WIDTH } from '@/lib/constants'
 import { useBrief } from '@/hooks/use-brief'
 
@@ -63,7 +64,9 @@ function FeaturesContent({ children }: { children: React.ReactNode }) {
 export default function FeaturesLayout({ children }: { children: React.ReactNode }) {
   return (
     <PelicanPanelProvider>
-      <FeaturesContent>{children}</FeaturesContent>
+      <GlossaryProvider>
+        <FeaturesContent>{children}</FeaturesContent>
+      </GlossaryProvider>
     </PelicanPanelProvider>
   )
 }

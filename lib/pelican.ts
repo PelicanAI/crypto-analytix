@@ -137,7 +137,13 @@ export async function generate(options: PelicanGenerateOptions): Promise<string>
  */
 export function buildContext(
   contextType: PelicanContext,
-  contextData?: Record<string, unknown>
+  contextData?: Record<string, unknown>,
+  userContext?: {
+    experience_level?: string
+    trading_background?: string[]
+    crypto_familiarity?: string
+    interests?: string[]
+  }
 ): string {
   const parts: string[] = [
     '[CRYPTO ANALYTIX — PELICAN AI]',
@@ -146,6 +152,15 @@ export function buildContext(
 
   if (contextData) {
     parts.push(`Data: ${JSON.stringify(contextData)}`)
+  }
+
+  if (userContext) {
+    parts.push('User Profile:')
+    if (userContext.experience_level) parts.push(`  Experience: ${userContext.experience_level}`)
+    if (userContext.trading_background?.length) parts.push(`  Background: ${userContext.trading_background.join(', ')}`)
+    if (userContext.crypto_familiarity) parts.push(`  Crypto familiarity: ${userContext.crypto_familiarity}`)
+    if (userContext.interests?.length) parts.push(`  Interests: ${userContext.interests.join(', ')}`)
+    parts.push('Calibrate your language and analogy complexity to this user profile.')
   }
 
   parts.push(
