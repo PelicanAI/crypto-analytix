@@ -10,6 +10,25 @@ The product combines: Pelican AI (contextual intelligence embedded everywhere), 
 
 ---
 
+## Quick Start
+
+```bash
+npm install              # Install dependencies
+npm run dev              # Start dev server (localhost:3000)
+npm run build            # Production build — MUST pass before any commit
+npm run lint             # ESLint check
+```
+
+**Key files to read first:**
+- `CLAUDE.md` (this file) — Architecture, design system, patterns, security rules
+- `CRYPTO_ANALYTIX_BUILD_PROMPT.md` — Session-by-session build plan
+- `ISSUES_AND_TECH_DEBT.md` — Running tech debt tracker (read at start, update at end of every session)
+- `tasks/lessons.md` — Lessons learned from bugs and fixes
+
+**Environment:** Copy `.env.example` to `.env.local` and fill in keys. The app runs with mock fallbacks when API keys are missing.
+
+---
+
 ## Core Product Principles
 
 ### 1. Portfolio-First
@@ -152,10 +171,14 @@ Cinematic, minimal, premium dark mode. Crypto-native aesthetic that feels approa
 --text-secondary: #9898a6;     /* Body text, descriptions */
 --text-muted: #5a5a6e;         /* Labels, captions, timestamps */
 
-/* Accent — teal/green for crypto identity, used sparingly */
---accent-primary: #0f7b6c;
---accent-hover: #10a88f;
---accent-muted: rgba(15,123,108,0.15);
+/* Accent — cyan-blue matching the CryptoAnalytix logo */
+--accent-primary: #1DA1C4;
+--accent-hover: #25BFDF;
+--accent-muted: rgba(29,161,196,0.15);
+--accent-glow: rgba(29,161,196,0.25);
+--accent-dim: rgba(29,161,196,0.08);
+--accent-gradient: linear-gradient(135deg, #1A6FB5, #25BFDF);
+--accent-gradient-subtle: linear-gradient(135deg, rgba(29,161,196,0.2), rgba(37,191,223,0.1));
 
 /* Data colors — ONLY for financial data */
 --data-positive: #22c55e;      /* Profit, gains, bullish */
@@ -1051,6 +1074,7 @@ SENTRY_DSN
 13. Supabase FK joins may not exist. Query IDs first, then batch-fetch with `.in()`.
 14. Stripe checkout route fails build without env vars. Use `force-dynamic`.
 15. CSS values too subtle for dark mode: push contrast 2-3x harder than you think looks right.
+16. **shadcn v4 vs v3 conflict:** `npx shadcn@latest init` and `npx shadcn@latest add` may inject Tailwind v4 syntax into globals.css and layout.tsx. This project uses Tailwind v3 + Next.js 14. After EVERY shadcn command, run `git diff` on globals.css and layout.tsx. Strip any `@import "shadcn/tailwind.css"`, `@apply border-border`, shadcn `:root`/`.dark` CSS variable blocks, or duplicate font imports. The custom design system in globals.css is the source of truth.
 
 ---
 
