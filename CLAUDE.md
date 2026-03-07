@@ -18,8 +18,14 @@ The entry point is always the user's holdings. Not the market. Not a dashboard. 
 ### 2. Progressive Disclosure
 The user sees only what they need at their current level. The platform reveals more as they grow. A first-time user sees their portfolio, one Pelican insight, and the daily brief. A power user sees performance metrics, CT signals, wallet tracking, and custom alerts. Features surface based on user behavior, not feature flags. Never overwhelm. Never hide.
 
-### 3. Pelican Lives Everywhere
-Pelican AI is NOT a chat page. It is contextual intelligence embedded at every data point on the platform. Every metric, every chart, every news item, every analyst call has a small Pelican icon. Click it, a panel slides open with Pelican pre-loaded with the context of what you were looking at + your portfolio. Zero typing required for the first response. The user can then ask follow-ups. This is the core UX pattern of the entire product.
+### 3. Pelican Lives Everywhere (Two Modes)
+Pelican AI operates in two modes, both powered by the same three-layer architecture:
+
+**Contextual Pop-Outs (free/Lite):** Every data point has a Pelican icon. Click it, panel slides open with context pre-loaded. Quick, focused, one-click intelligence. This is the free taste that demonstrates Pelican's value.
+
+**Pelican Portal (paid):** A dedicated full-chat tab where users ask anything. Open-ended conversations, full history, "Share to Community" button. This is the premium product. Every pop-out response includes "Want to go deeper? Open Pelican Portal →" as the conversion funnel.
+
+The pop-outs sell the Portal. The Portal feeds the community. The community sells the platform.
 
 ### 4. TradFi Language, Crypto Content
 Every piece of copy, every tooltip, every Pelican response speaks the language of a traditional trader. "Funding rate" is explained as "similar to overnight repo rates, paid 3x daily." "Liquidation cascade" is explained as "like a short squeeze on ES futures but happening 24/7." The user learns crypto by seeing it mapped to concepts they already know.
@@ -284,6 +290,68 @@ The user sees "Tell me about my SOL position." Pelican receives the full context
 
 ---
 
+## Pelican Portal (Premium Chat Tab)
+
+### The Concept
+The contextual pop-outs are the free taste. Pelican Portal is the full meal. It's a dedicated chat tab in the sidebar navigation where users can have open-ended conversations with Pelican about anything: any token, any market condition, any strategy question, any "explain this to me like I'm a futures trader" request. No contextual constraint. No one-question limit. Full conversation history.
+
+This is behind a paywall ($30/month standalone, or included in Pro $99). The conversion funnel is built into every pop-out: at the bottom of every contextual Pelican response, a CTA reads "Want to go deeper? Open Pelican Portal →". User clicks, lands on the Portal tab. If not subscribed, sees the paywall. If subscribed, starts chatting immediately with the context from their pop-out pre-loaded.
+
+### Why This Matters Strategically
+- Every contextual pop-out is a product demo for Pelican Portal. Users experience the value for free, then pay for unlimited access.
+- The Portal captures users who would otherwise go to ChatGPT or Perplexity for crypto questions. Keep them inside Crypto Analytix where Pelican has their portfolio context.
+- Community share mechanic (below) turns every Portal conversation into social proof in the chatroom.
+- Blake and ForexAnalytix earn 15% of Pelican Portal revenue, aligning their incentive to drive users toward it.
+
+### "Share My Insight" → Community Loop
+Every Pelican Portal response has a "Share to Community" button. When clicked:
+1. The user's question + Pelican's answer are packaged into a "Shared Insight" card
+2. The card is injected into the community chatroom with attribution: "Shared via Pelican Portal by @username"
+3. Free users in the chatroom see high-quality AI analysis and think "I want that"
+4. The shared insight card has a subtle "Get Pelican Portal" CTA for non-subscribers
+5. The community becomes a living showcase of Pelican's intelligence. Every shared insight is organic marketing.
+
+This creates a virtuous cycle: Portal users share insights → free users see the value → free users subscribe → more insights shared → community grows.
+
+### Architecture
+The Portal uses the same three-layer Pelican architecture:
+- Layer 1: `lib/pelican.ts` handles all API communication
+- Layer 2: `hooks/use-streaming-chat.ts` handles streaming (same hook as pop-outs)
+- Portal page: `app/(features)/pelican-portal/page.tsx` — full chat interface with conversation history, saved conversations, and share button
+- Portal is a SEPARATE consumer from the panel. It has its own conversation state, its own UI, its own persistence. But it uses the same streaming infrastructure.
+
+### Portal vs. Pop-Outs
+| | Contextual Pop-Outs | Pelican Portal |
+|---|---|---|
+| Access | Free tier (limited) / Lite+ (unlimited) | $30/month or Pro tier |
+| Trigger | Click Pelican icon on any data point | Navigate to Portal tab |
+| Context | Pre-loaded with specific data (position, signal, metric) | Open-ended, user types anything |
+| Conversation | Short, 1-3 exchanges, often no-persist | Full conversations, saved history |
+| UX | Sliding side panel / bottom sheet | Full-page chat interface |
+| Share | No | Yes — "Share to Community" button |
+| History | Ephemeral (unless persisted) | Full conversation list, searchable |
+
+### Data Model Additions (when building this feature)
+```
+pelican_portal_conversations: id, user_id, title,
+  last_message_preview, message_count, created_at, updated_at
+
+shared_insights: id, user_id, username,
+  question (text), answer (text),
+  portal_conversation_id (uuid),
+  community_message_id (uuid),    -- Links to community chat
+  likes_count (int default 0),
+  created_at
+```
+
+### Revenue Model
+- Pelican Portal: $30/month standalone
+- Included in Pro tier ($99/month)
+- Blake / ForexAnalytix: 15% of Portal revenue
+- At 1,000 Portal subscribers: $30,000/month gross, $4,500/month to Blake's side
+
+---
+
 ## Data Architecture
 
 ### Exchange & Broker Connection via SnapTrade (BUILD THIS FIRST)
@@ -385,16 +453,23 @@ The single most important function. Assembles all user context for Pelican:
 app/(marketing)/         Landing, pricing, FAQ (light mode, SSR)
 app/(features)/          Authenticated feature pages:
   portfolio/               Portfolio overview (THE home screen)
+  pelican-portal/          Pelican AI full chat ($30/mo or Pro tier)
   asset/[ticker]/          Individual asset deep dive
   signals/                 CT signals + wallet tracking + analyst feed
   brief/                   Daily brief / What I Missed
-  community/               Chat room
+  community/               Chat room (with shared Pelican insights)
   learn/                   Education modules
   alerts/                  Notification settings + history
   settings/                Account, exchange connections, preferences
 app/auth/                Login, signup, callback
 app/api/                 API routes
 ```
+
+### Navigation (6 items)
+```
+Home (portfolio) → Pelican Portal → Signals → Calendar → Learn → Chat
+```
+The Portal tab sits right next to Home. It's the second thing in the nav. When a free user clicks it and isn't subscribed, they see the paywall with examples of what Portal can do.
 
 ### Home Screen: Portfolio View
 This is the first thing users see after connecting their exchange. Progressive disclosure in action:
@@ -444,14 +519,15 @@ Answers set: language level, portfolio source, home screen layout. No 12-step wi
 **Core Platform:**
 - Exchange/broker connection via SnapTrade (Kraken, Coinbase, IBKR, Fidelity — unified OAuth flow)
 - Portfolio view with Pelican contextual pop-outs
+- Pelican Portal: full chat tab, $30/month standalone or included in Pro. "Open Pelican Portal →" CTA at the bottom of every pop-out response.
 - Daily Brief (Pelican Market Pulse at 6 AM ET)
 - "What I Missed" engine (catch-up summary on app open after >4 hours away)
 - Analyst content feed with Pelican icons (Blake, Grega, Ryan)
 - Onboarding flow (3 questions, under 30 seconds)
 - Education modules (7 confusion points: spot vs futures, perpetuals, funding rates, custody, exchange risk, 24/7 trading, asset selection)
 - Basic performance metrics (P&L daily/weekly/monthly, allocation breakdown, portfolio value history)
-- Stripe subscription (Free / Lite $29 / Pro $99)
-- Community chat room (with Pelican @mention bot)
+- Stripe subscription: Free (limited pop-outs) / Lite $29 (unlimited pop-outs + analyst feed) / Pelican Portal $30 (full AI chat) / Pro $99 (everything)
+- Community chat room with Pelican @mention bot + "Share my insight" from Portal users
 
 **Phase 1 Stickiness:**
 - Auto-detected trades via SnapTrade with Pelican grading (was the entry/exit good? what was the R-multiple?)
@@ -731,6 +807,15 @@ NOT a Discord for degens. A moderated community of TradFi traders learning crypt
 - Jack provides crypto-native context
 - Crypto-to-TradFi migrants serve as organic culture bridges
 - Built on Supabase Realtime (evaluate scaling needs if >500 concurrent users)
+
+### Shared Pelican Insights (Portal → Community Pipeline)
+Pelican Portal users can hit "Share my insight" on any Portal response. This creates a special "Shared Insight" card in the community chatroom:
+- Displays: the user's question, Pelican's full answer, who shared it, timestamp
+- Styled as a distinct card type (visually differentiated from normal chat messages)
+- Non-subscribers see a subtle "Get Pelican Portal" CTA on each shared insight card
+- Users can like/react to shared insights (surfacing the best ones)
+- Creates organic social proof: free users see real Pelican analysis in the community, driving Portal conversions
+- Shared insights are stripped of any portfolio-specific data (prices are fine, specific holdings are redacted)
 
 ---
 
