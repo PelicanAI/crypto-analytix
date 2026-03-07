@@ -25,10 +25,7 @@ function FeaturesContent({ children }: { children: React.ReactNode }) {
       <div
         className="fixed inset-0 pointer-events-none z-0"
         style={{
-          background: [
-            'radial-gradient(ellipse 80% 50% at 15% 0%, rgba(29, 161, 196, 0.05) 0%, transparent 60%)',
-            'radial-gradient(ellipse 60% 40% at 85% 100%, rgba(29, 161, 196, 0.03) 0%, transparent 50%)',
-          ].join(', '),
+          background: 'radial-gradient(ellipse 80% 50% at 15% 0%, var(--atmosphere-primary) 0%, transparent 60%), radial-gradient(ellipse 60% 40% at 85% 100%, var(--atmosphere-secondary) 0%, transparent 50%)',
         }}
       />
 

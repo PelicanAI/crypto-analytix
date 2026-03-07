@@ -6,6 +6,7 @@ import { X, ArrowUp } from '@phosphor-icons/react'
 import { usePelicanPanelContext } from '@/providers/pelican-panel-provider'
 import { useMobile } from '@/hooks/use-mobile'
 import { LiveDot } from '@/components/shared/live-dot'
+import { MarkdownRenderer } from '@/components/pelican-portal/markdown-renderer'
 import { PELICAN_CONTEXTS } from '@/types/pelican'
 import { PELICAN_PANEL_WIDTH } from '@/lib/constants'
 
@@ -29,71 +30,6 @@ function getContextTitle(context: string | null, ticker: string | null): string 
     [PELICAN_CONTEXTS.COMMUNITY_MENTION]: 'Community Response',
   }
   return titles[context] || 'Pelican AI'
-}
-
-// ─── Markdown-lite renderer ──────────────────────────────────────
-
-function renderInlineBold(text: string): React.ReactNode {
-  const parts = text.split(/(\*\*.*?\*\*)/)
-  return parts.map((part, i) => {
-    if (part.startsWith('**') && part.endsWith('**')) {
-      return (
-        <span key={i} className="font-semibold" style={{ color: 'var(--text-primary)' }}>
-          {part.slice(2, -2)}
-        </span>
-      )
-    }
-    return part
-  })
-}
-
-function renderMarkdown(text: string) {
-  const lines = text.split('\n')
-  const elements: React.ReactNode[] = []
-  let key = 0
-
-  for (const line of lines) {
-    key++
-
-    if (line.trim() === '') {
-      elements.push(<div key={key} className="h-2.5" />)
-      continue
-    }
-
-    // Bold headings: **text**
-    if (line.startsWith('**') && line.endsWith('**')) {
-      elements.push(
-        <div
-          key={key}
-          className="font-semibold mt-4 mb-1 first:mt-0"
-          style={{ color: 'var(--text-primary)' }}
-        >
-          {line.slice(2, -2)}
-        </div>
-      )
-      continue
-    }
-
-    // Bullet points
-    if (line.startsWith('• ') || line.startsWith('- ')) {
-      elements.push(
-        <div key={key} className="pl-4 mb-1" style={{ color: 'var(--text-secondary)', lineHeight: '1.75' }}>
-          <span style={{ color: 'var(--accent-primary)', marginRight: 6 }}>•</span>
-          {renderInlineBold(line.slice(2))}
-        </div>
-      )
-      continue
-    }
-
-    // Regular text
-    elements.push(
-      <div key={key} className="mb-1" style={{ color: 'var(--text-secondary)', lineHeight: '1.75' }}>
-        {renderInlineBold(line)}
-      </div>
-    )
-  }
-
-  return elements
 }
 
 // ─── Streaming cursor ────────────────────────────────────────────
@@ -296,9 +232,7 @@ export default function PelicanChatPanel() {
                 {msg.content}
               </div>
             ) : (
-              <div className="text-[13px]">
-                {renderMarkdown(msg.content)}
-              </div>
+              <MarkdownRenderer content={msg.content} className="text-[13px]" />
             )}
           </div>
         ))}
@@ -306,7 +240,7 @@ export default function PelicanChatPanel() {
         {/* Currently streaming text with blinking cursor */}
         {isStreaming && streamingText && (
           <div className="mb-4 text-[13px]">
-            {renderMarkdown(streamingText)}
+            <MarkdownRenderer content={streamingText} />
             <StreamingCursor />
           </div>
         )}

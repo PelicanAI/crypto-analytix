@@ -63,3 +63,35 @@
 25. **Portfolio data stripping for shared insights** — When users share Pelican insights to the community, portfolio-specific data must be stripped. Use regex patterns to catch dollar amounts preceded by possessives ("your $43,799 BTC position" → "your BTC position") while preserving general market prices ("BTC is trading at $84,230"). Seven regex patterns cover the common cases.
 
 26. **6-agent parallel build with strict file ownership** — Session 10 used 6 agents (1 shared/DB agent + 5 feature agents) running in parallel with zero file collisions. The key: Agent 6 (shared deps) runs first and completes before launching the 5 feature agents. Each feature agent owns a strict set of files (page, hook, API route). Review agent runs last to catch cross-cutting issues.
+
+## Cleanup Session — Post-Build Security & Code Quality Audit
+
+27. **use-streaming-chat.ts was NOT modified in Session 10** — `git diff HEAD~1 -- hooks/use-streaming-chat.ts` returned empty. The file was included in the commit tree but had zero code changes. The READ-ONLY policy (lesson 10) held. Verified: the Pelican Portal reuses the hook without modification, confirming the three-layer architecture.
+
+28. **Stub API routes are a security smell** — `api/pelican/route.ts` existed as dead code with auth scaffolding but no purpose. Even with auth checks, stub routes increase attack surface and confuse audits. Delete stubs that have no consumers. If a route exists, it should do something real.
+
+29. **All API routes need top-level try/catch** — Supabase `createServerClient()` and `.auth.getUser()` can throw unexpectedly (e.g., missing env vars, network issues). Without a top-level try/catch, the user gets an opaque 500 with no server-side logging. Pattern: wrap the entire handler body, log via `logger.error()`, return a generic 500 JSON response.
+
+## Polish Session A — Pelican Portal Production Upgrade
+
+30. **Shared MarkdownRenderer eliminates duplicate rendering code** — Both the Pelican Panel and Portal need markdown rendering with code blocks, tables, lists, and inline formatting. Extract a shared `components/shared/markdown-renderer.tsx` so both consumers render identically without duplicating parsing/styling logic.
+
+31. **Gradient fade above input creates smooth content-to-input transition** — A `pointer-events-none` absolute-positioned div with a gradient from transparent to the background color above the input area eliminates the hard border between scrollable content and the fixed input. Users can still click through the fade area to interact with content beneath it.
+
+32. **Equalizer typing indicator is more distinctive than bouncing dots** — Three animated bars at different heights and speeds (equalizer pattern) create a more unique and branded typing indicator than the standard bouncing dots pattern. Use Framer Motion with staggered `repeatDelay` and different `duration` values per bar.
+
+33. **Delayed loading spinner prevents flash on fast loads** — Show a loading spinner only after a 200ms delay (`setTimeout` in `useEffect`). If the content loads faster than 200ms, the user never sees the spinner, avoiding a distracting flash. Clean up the timeout on unmount.
+
+34. **File splitting: large page → orchestrator + focused sub-components** — An 805-line `page.tsx` becomes unmanageable. Split into a ~160-line orchestrator that handles state/layout and 6 focused sub-components under 200 lines each (e.g., conversation sidebar, message list, input area, starter prompts, message bubble, empty state). Each sub-component owns one concern. The orchestrator composes them.
+
+## Polish Session B — Sidebar, Header Bar, Portfolio Page
+
+35. **Right-align number columns in data tables** — The single biggest change for making a financial table feel professional. TradFi traders expect right-aligned numbers (ThinkOrSwim, Bloomberg, NinjaTrader all do this). Add `text-right` on all number `<th>` and `<td>` cells, and `items-end` on flex column layouts within cells. This was the most impactful single-line change across the portfolio table.
+
+36. **Gradient tint replaces accent border for card depth** — A `linear-gradient(135deg, rgba(color, 0.04) 0%, var(--bg-surface) 60%)` background gives cards a whisper of color identity without the flat "colored stripe on top" pattern. Each stat card can have its own tint color (green for positive P&L, red for negative, cyan for default).
+
+37. **Make entire table rows clickable for Fitts's Law** — On a financial table, users want to click a row to see details. Adding `cursor-pointer` and `onClick` to the `<tr>` element is a major mobile usability win. Use `e.stopPropagation()` on specific interactive elements within the row (like the Pelican icon) to prevent double-firing.
+
+38. **3-agent parallel polish with strict file ownership** — Polish Session B used 3 agents (sidebar, header, portfolio) with zero file collisions. Each agent owned its specific files and couldn't touch others. The shared CSS changes (globals.css) were made before launching agents to prevent conflicts. Pattern confirmed from Sessions 8, 10, Polish A.
+
+39. **Shimmer loading class in globals.css beats self-injecting keyframes** — The old `loading-skeleton.tsx` injected keyframes via `useEffect` + `document.createElement('style')`. Better to define `.shimmer` as a global CSS class with the keyframe and `background-size: 200% 100%` pattern. Components just add `className="shimmer"` — no runtime style injection needed.

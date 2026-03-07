@@ -24,8 +24,8 @@ export default function MobileNav() {
         border-t border-[var(--border-subtle)]"
       style={{
         backgroundColor: 'rgba(from var(--bg-base) r g b / 0.95)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
+        backdropFilter: 'blur(20px) saturate(1.2)',
+        WebkitBackdropFilter: 'blur(20px) saturate(1.2)',
         paddingBottom: 'max(8px, env(safe-area-inset-bottom))',
         paddingTop: '8px',
       }}
@@ -48,7 +48,7 @@ export default function MobileNav() {
               )}
             >
               {NavIcon && <NavIcon size={20} weight="regular" />}
-              <span className="text-[9px] uppercase leading-none flex items-center gap-0.5">
+              <span className="text-[9px] uppercase tracking-[0.3px] leading-none flex items-center gap-0.5">
                 {item.label}
                 <ArrowSquareOut size={7} className="text-[var(--text-muted)]" />
               </span>
@@ -69,7 +69,7 @@ export default function MobileNav() {
             )}
           >
             {NavIcon && <NavIcon size={20} weight={isActive ? 'fill' : 'regular'} />}
-            <span className="text-[9px] uppercase leading-none">
+            <span className="text-[9px] uppercase tracking-[0.3px] leading-none">
               {item.label}
             </span>
           </Link>

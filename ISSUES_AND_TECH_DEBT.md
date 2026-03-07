@@ -1,6 +1,6 @@
 # Crypto Analytix — Issues & Tech Debt Tracker
 
-Last updated: March 7, 2026 (after Session 10 — Community, Calendar, Watchlist, Settings, Pelican Portal)
+Last updated: March 7, 2026 (after Polish Session B — Portfolio, Header, Sidebar First Impression)
 
 ## Priority Levels
 - **P0 — Fix before next session.** Will cause bugs or security issues if left.
@@ -18,25 +18,11 @@ Last updated: March 7, 2026 (after Session 10 — Community, Calendar, Watchlist
 
 ## P1 — Fix This Week
 
-### 4. Atmosphere gradient hardcodes accent color
-**File:** `app/(features)/layout.tsx`
-**Issue:** The atmosphere background uses `rgba(29, 161, 196, 0.05)` instead of referencing CSS variables. If the brand color changes again, this won't update.
-**Fix:** Use `var(--accent-dim)` and `var(--accent-glow)` or create a dedicated `--atmosphere-primary` and `--atmosphere-secondary` token in globals.css.
-**Why P1:** Not breaking anything, but violates the "all colors from CSS variables" principle that makes brand changes a one-file edit.
-
 ### 5. shadcn component additions need v4 syntax checking
 **Trigger:** Every time `npx shadcn@latest add <component>` is run
 **Issue:** shadcn v4 may inject Tailwind v4 syntax into globals.css or layout.tsx that breaks the build. Already happened once during init (see Lessons section below).
 **Fix:** After every `npx shadcn add`, run `git diff` on globals.css and layout.tsx. Strip any v4-only imports, @apply rules with shadcn classes, or CSS variable blocks that conflict with the custom design system.
 **Why P1:** Will break the build immediately. Easy to catch, easy to miss if you're not looking.
-
-### 6. ~~Duplicate pelican-icon.tsx~~ — RESOLVED Session 6
-Converted `components/pelican-panel/pelican-icon.tsx` to a re-export of the canonical `components/shared/pelican-icon.tsx`.
-
-### 7. Updated CLAUDE.md not in repo
-**Issue:** The CLAUDE.md in this Claude.ai conversation has the Pelican Intelligence Alerts section, updated notification_history schema, and updated feature roadmap. The version in the repo may be the older version without these additions.
-**Fix:** Push the latest CLAUDE.md to the repo so Sessions 6-10 pick up the Intelligence Alerts architecture, the extensible notification schema, and the cross-asset translation layers.
-**Why P1:** Future sessions reference CLAUDE.md. If it's stale, Claude Code won't know about Intelligence Alerts or the three-layer analyst integration.
 
 ---
 
@@ -45,7 +31,7 @@ Converted `components/pelican-panel/pelican-icon.tsx` to a re-export of the cano
 ### 8. No rate limiting on API routes
 **Files:** All `app/api/` routes
 **Issue:** The Upstash rate limiting utility exists in `lib/rate-limit.ts` but no API route uses it yet. Free tier users could spam the Pelican API or portfolio sync endpoint.
-**Fix:** When implementing each API route (Sessions 6-10), wrap cost-incurring endpoints with the rate limiter. At minimum: `/api/pelican`, `/api/portfolio/sync`, `/api/brief` (generation endpoint).
+**Fix:** When implementing each API route (Sessions 6-10), wrap cost-incurring endpoints with the rate limiter. At minimum: `/api/portfolio/sync`, `/api/brief` (generation endpoint).
 **When:** Each session that implements an API route should add rate limiting to that route.
 
 ### 9. No error tracking (Sentry) configured
@@ -81,6 +67,12 @@ Converted `components/pelican-panel/pelican-icon.tsx` to a re-export of the cano
 **Fix:** Create branded HTML email templates via Resend. Configure Supabase to use custom SMTP (Resend) instead of default Supabase mailer.
 **When:** Before beta launch.
 
+### 31. Two orphan stub hooks need implementation or removal
+**Files:** `hooks/use-behavior.ts`, `hooks/use-toast.ts`
+**Issue:** Both return empty objects `{}` and have no consumers. `use-behavior` was planned for behavioral pattern tracking (Phase 2 stickiness feature). `use-toast` should be replaced with a real toast system (shadcn toast or sonner) during the polish pass.
+**Fix:** Implement `use-behavior` when building Phase 2 behavioral tracking. Replace `use-toast` with shadcn toast or sonner.
+**When:** Phase 2 for use-behavior, polish pass for use-toast.
+
 ---
 
 ## P3 — Improve Eventually
@@ -104,15 +96,6 @@ Converted `components/pelican-panel/pelican-icon.tsx` to a re-export of the cano
 **Issue:** Components have basic accessibility (cursor-pointer, focus states, tap targets) but no formal WCAG audit has been done.
 **Fix:** Run axe-core or Lighthouse accessibility audit. Fix any issues flagged.
 **When:** Before public launch.
-
-### 19. Placeholder hooks return untyped empty objects
-**Files:** `hooks/use-credits.ts`, `hooks/use-notifications.ts`, `hooks/use-behavior.ts`
-**Issue:** Stubs return `{}` which TypeScript treats as `Record<string, never>`.
-**Fix:** When implementing each hook, define the return interface first, then implement.
-**When:** Post-launch polish.
-**Partial fix Session 6:** `use-portfolio.ts` and `use-snaptrade.ts` now fully typed with SWR.
-**Partial fix Session 7:** `use-signals.ts` now fully typed with SWR, filter state, and cursor pagination.
-**Partial fix Session 10:** `use-community.ts`, `use-calendar.ts`, `use-watchlist.ts`, `use-pelican-portal.ts` all fully typed.
 
 ### 27. Calendar and watchlist API routes always use mock data
 **Files:** `app/api/calendar/route.ts`, `app/api/watchlist/route.ts`
@@ -197,6 +180,21 @@ Converted `components/pelican-panel/pelican-icon.tsx` to a re-export of the cano
 | — | Pelican Portal page missing entirely | Mar 7, 2026 | Session 10 |
 | — | Nav missing Pelican Portal + external Chat | Mar 7, 2026 | Session 10 |
 | — | No calendar_events, watchlist, portal DB tables | Mar 7, 2026 | Session 10 |
+| 4 | Atmosphere gradient hardcodes accent color | Mar 7, 2026 | Cleanup Session |
+| 7 | Updated CLAUDE.md not in repo | Mar 7, 2026 | Cleanup Session (was pushed earlier) |
+| — | Orphan api/pelican/route.ts stub (dead code) | Mar 7, 2026 | Cleanup Session |
+| — | api/notifications/route.ts was a stub | Mar 7, 2026 | Cleanup Session |
+| — | use-behavior.ts missing 'use client' | Mar 7, 2026 | Cleanup Session |
+| — | use-toast.ts missing 'use client' | Mar 7, 2026 | Cleanup Session |
+| — | api/brief/route.ts missing try/catch | Mar 7, 2026 | Cleanup Session |
+| — | api/brief/activity/route.ts missing try/catch | Mar 7, 2026 | Cleanup Session |
+| — | Pelican Portal upgraded to production-grade chat (6 sub-components, shared MarkdownRenderer, equalizer typing indicator, gradient input, smart scroll) | Mar 7, 2026 | Polish Session A |
+| — | Sidebar: gradient active state, 3px accent bar, logo glow + link, gear icon at bottom, external link superscript, saturate(1.2) backdrop | Mar 7, 2026 | Polish Session B |
+| — | Header bar: floating glass shadow, shimmer skeleton, CaretUp/Down P&L arrow, BTC β badge with color-coded correlation, Pelican Portal LiveDot header, notification dots on brief/bell icons | Mar 7, 2026 | Polish Session B |
+| — | Portfolio page decomposed: 647-line monolith → 270-line orchestrator + 6 focused sub-components (stat-card, pelican-insight-card, holdings-row, holdings-table, portfolio-empty, portfolio-loading) | Mar 7, 2026 | Polish Session B |
+| — | Portfolio: stat cards with gradient tint, right-aligned number columns, clickable table rows, proper minus signs, Pelican glow on notable positions, shimmer loading, enhanced empty state with feature preview cards | Mar 7, 2026 | Polish Session B |
+| — | Mobile nav: saturate(1.2) backdrop, tracking-[0.3px] labels | Mar 7, 2026 | Polish Session B |
+| — | globals.css: shimmer keyframe, .shimmer class, .themed-scroll utility, prefers-reduced-motion support | Mar 7, 2026 | Polish Session B |
 
 ---
 

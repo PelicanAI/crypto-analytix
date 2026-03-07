@@ -114,56 +114,62 @@ function generateMockBrief(): BriefContent {
 // ---------------------------------------------------------------------------
 
 export async function GET(request: NextRequest) {
-  const supabase = await createServerClient()
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  try {
+    const supabase = await createServerClient()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
 
-  if (authError || !user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const useMock = request.nextUrl.searchParams.get('mock') === 'true'
+
+    if (useMock) {
+      return NextResponse.json(generateMockBrief())
+    }
+
+    // Check for cached brief today
+    const today = new Date().toISOString().split('T')[0]
+
+    const { data: cached, error: cacheError } = await supabase
+      .from('daily_briefs')
+      .select('content, generated_at')
+      .eq('user_id', user.id)
+      .eq('brief_date', today)
+      .maybeSingle()
+
+    if (cacheError) {
+      logger.error('Failed to query daily_briefs', { error: cacheError.message })
+    }
+
+    if (cached) {
+      return NextResponse.json({
+        ...cached.content,
+        generated_at: cached.generated_at,
+      })
+    }
+
+    // Generate and cache a new brief
+    const brief = generateMockBrief()
+
+    const { error: insertError } = await supabase
+      .from('daily_briefs')
+      .insert({
+        user_id: user.id,
+        brief_date: today,
+        content: brief,
+        generated_at: brief.generated_at,
+      })
+
+    if (insertError) {
+      logger.error('Failed to cache daily brief', { error: insertError.message })
+      // Still return the brief even if caching fails
+    }
+
+    return NextResponse.json(brief)
+  } catch (err) {
+    const error = err instanceof Error ? err : new Error(String(err))
+    logger.error('Brief generation failed', { error: error.message })
+    return NextResponse.json({ error: 'Failed to generate brief' }, { status: 500 })
   }
-
-  const useMock = request.nextUrl.searchParams.get('mock') === 'true'
-
-  if (useMock) {
-    return NextResponse.json(generateMockBrief())
-  }
-
-  // Check for cached brief today
-  const today = new Date().toISOString().split('T')[0]
-
-  const { data: cached, error: cacheError } = await supabase
-    .from('daily_briefs')
-    .select('content, generated_at')
-    .eq('user_id', user.id)
-    .eq('brief_date', today)
-    .maybeSingle()
-
-  if (cacheError) {
-    logger.error('Failed to query daily_briefs', { error: cacheError.message })
-  }
-
-  if (cached) {
-    return NextResponse.json({
-      ...cached.content,
-      generated_at: cached.generated_at,
-    })
-  }
-
-  // Generate and cache a new brief
-  const brief = generateMockBrief()
-
-  const { error: insertError } = await supabase
-    .from('daily_briefs')
-    .insert({
-      user_id: user.id,
-      brief_date: today,
-      content: brief,
-      generated_at: brief.generated_at,
-    })
-
-  if (insertError) {
-    logger.error('Failed to cache daily brief', { error: insertError.message })
-    // Still return the brief even if caching fails
-  }
-
-  return NextResponse.json(brief)
 }
