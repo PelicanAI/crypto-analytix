@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { ArrowUp } from '@phosphor-icons/react'
+import { SlashCommandMenu } from '@/components/chat/slash-command-menu'
 
 // ─── Types ──────────────────────────────────────────────────────
 
@@ -119,6 +120,7 @@ export function PortalInput({
 
       {/* Input area */}
       <div
+        className="relative"
         style={{
           padding: '16px 20px',
           paddingBottom: isMobile
@@ -126,6 +128,14 @@ export function PortalInput({
             : 16,
         }}
       >
+        {/* Slash command menu */}
+        <SlashCommandMenu
+          inputValue={value}
+          onSelectCommand={(prompt) => {
+            onSend(prompt)
+          }}
+          onClearInput={() => setValue('')}
+        />
         {/* Input wrapper with focus ring */}
         <div
           ref={wrapperRef}

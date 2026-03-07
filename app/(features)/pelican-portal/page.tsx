@@ -1,19 +1,40 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect, Suspense } from 'react'
 import { List, ShareNetwork } from '@phosphor-icons/react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { usePelicanPortal } from '@/hooks/use-pelican-portal'
 import { useMobile } from '@/hooks/use-mobile'
-import { LiveDot } from '@/components/shared/live-dot'
 import { PelicanAvatar } from '@/components/pelican-portal/portal-message'
 import { PortalChatArea, type PortalChatAreaHandle } from '@/components/pelican-portal/portal-chat-area'
-import { PortalEmptyState } from '@/components/pelican-portal/portal-empty-state'
+import { WelcomeScreen } from '@/components/chat/welcome-screen'
+import { EnhancedTypingDots } from '@/components/chat/enhanced-typing-dots'
 import { PortalInput } from '@/components/pelican-portal/portal-input'
 import { PortalSidebar } from '@/components/pelican-portal/portal-sidebar'
 
+// ─── Prompt reader (needs Suspense boundary) ─────────────────────
+
+function useAutoPrompt(sendMessage: (content: string) => Promise<void>, isReady: boolean) {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const sentRef = useRef(false)
+
+  useEffect(() => {
+    if (sentRef.current || !isReady) return
+    const prompt = searchParams.get('prompt')
+    if (prompt) {
+      sentRef.current = true
+      // Clear the URL param without full navigation
+      router.replace('/pelican-portal', { scroll: false })
+      // Send the prompt after a tick so the UI renders first
+      setTimeout(() => sendMessage(prompt), 100)
+    }
+  }, [searchParams, sendMessage, router, isReady])
+}
+
 // ─── Main Page ──────────────────────────────────────────────────
 
-export default function PelicanPortalPage() {
+function PelicanPortalContent() {
   const {
     conversations,
     isLoadingConversations,
@@ -32,7 +53,13 @@ export default function PelicanPortalPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const chatAreaRef = useRef<PortalChatAreaHandle>(null)
 
+  // Auto-send prompt from URL query param
+  useAutoPrompt(sendMessage, !isLoadingConversations)
+
   const hasMessages = messages.length > 0 || isStreaming
+
+  // Track last user message for typing indicator context
+  const lastUserMessage = [...messages].reverse().find(m => m.role === 'user')?.content || ''
 
   // Handlers
   const handleSelectConversation = useCallback((id: string) => {
@@ -113,10 +140,7 @@ export default function PelicanPortalPage() {
               </div>
               <div className="flex items-center gap-1.5" style={{ fontSize: 11, color: 'var(--text-muted)' }}>
                 {isStreaming ? (
-                  <>
-                    <LiveDot color="var(--accent-primary)" size={6} />
-                    <span>Thinking...</span>
-                  </>
+                  <EnhancedTypingDots userMessage={lastUserMessage} isActive />
                 ) : (
                   <span>Ask me anything about crypto</span>
                 )}
@@ -151,7 +175,7 @@ export default function PelicanPortalPage() {
 
         {/* Messages or empty state */}
         {!hasMessages && !isLoadingMessages ? (
-          <PortalEmptyState onSelectPrompt={handleSend} />
+          <WelcomeScreen onSelectPrompt={handleSend} />
         ) : (
           <PortalChatArea
             ref={chatAreaRef}
@@ -170,5 +194,13 @@ export default function PelicanPortalPage() {
         />
       </div>
     </div>
+  )
+}
+
+export default function PelicanPortalPage() {
+  return (
+    <Suspense>
+      <PelicanPortalContent />
+    </Suspense>
   )
 }
