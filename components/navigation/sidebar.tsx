@@ -1,19 +1,24 @@
 'use client'
 
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { House, Lightning, CalendarBlank, GraduationCap, ChatCircle, Bird, ArrowSquareOut, GearSix, type Icon } from '@phosphor-icons/react'
+import { House, Lightning, CalendarBlank, GraduationCap, ChatCircle, Bird, ArrowSquareOut, GearSix, SquaresFour, Wallet, TrendUp, MagnifyingGlass, Bell, type Icon } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 import { NAV_ITEMS } from '@/lib/constants'
 
 const iconMap: Record<string, Icon> = {
+  SquaresFour,
   House,
+  Wallet,
   Lightning,
   CalendarBlank,
   GraduationCap,
   ChatCircle,
   Bird,
+  TrendUp,
+  MagnifyingGlass,
+  Bell,
 }
 
 export default function Sidebar() {
@@ -33,7 +38,7 @@ export default function Sidebar() {
 
       {/* Logo */}
       <Link
-        href="/portfolio"
+        href="/dashboard"
         className="mt-4 mb-5"
         onMouseEnter={() => setLogoHovered(true)}
         onMouseLeave={() => setLogoHovered(false)}
@@ -55,59 +60,77 @@ export default function Sidebar() {
 
       {/* Nav items */}
       <nav className="flex flex-col items-center gap-0.5 flex-1">
-        {NAV_ITEMS.map((item) => {
+        {NAV_ITEMS.map((item, index) => {
+          const prevItem = index > 0 ? NAV_ITEMS[index - 1] : null
+          const showSeparator = prevItem && prevItem.group !== item.group
+
           const NavIcon = iconMap[item.iconName]
           const isActive = !item.external && (pathname === item.path || pathname.startsWith(item.path + '/'))
+          const isPelicanItem = item.id === 'pelican-portal'
 
           if (item.external) {
             return (
-              <a
-                key={item.id}
-                href={item.path}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={cn(
-                  'relative w-[44px] h-[44px] flex flex-col items-center justify-center gap-0.5',
-                  'rounded-md cursor-pointer transition-colors duration-150',
-                  'text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[rgba(255,255,255,0.03)]'
+              <Fragment key={item.id}>
+                {showSeparator && (
+                  <div className="w-6 h-px my-1" style={{ backgroundColor: 'var(--border-subtle)' }} />
                 )}
-              >
-                <span className="relative">
-                  {NavIcon && <NavIcon size={18} weight="regular" />}
-                  <ArrowSquareOut
-                    size={8}
-                    className="absolute -top-1 -right-1.5 text-[var(--text-muted)]"
-                  />
-                </span>
-                <span className="text-[9px] font-medium uppercase tracking-[0.4px] leading-none">
-                  {item.label}
-                </span>
-              </a>
+                <a
+                  href={item.path}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={cn(
+                    'relative w-[44px] h-[44px] flex flex-col items-center justify-center gap-0.5',
+                    'rounded-md cursor-pointer transition-colors duration-150',
+                    'text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[rgba(255,255,255,0.03)]'
+                  )}
+                >
+                  <span className="relative">
+                    {NavIcon && <NavIcon size={18} weight="regular" />}
+                    <ArrowSquareOut
+                      size={8}
+                      className="absolute -top-1 -right-1.5 text-[var(--text-muted)]"
+                    />
+                  </span>
+                  <span className="text-[9px] font-medium uppercase tracking-[0.4px] leading-none">
+                    {item.label}
+                  </span>
+                </a>
+              </Fragment>
             )
           }
 
           return (
-            <Link
-              key={item.id}
-              href={item.path}
-              className={cn(
-                'relative w-[44px] h-[44px] flex flex-col items-center justify-center gap-0.5',
-                'rounded-md cursor-pointer transition-colors duration-150',
-                isActive
-                  ? 'text-[var(--accent-primary)]'
-                  : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[rgba(255,255,255,0.03)]'
+            <Fragment key={item.id}>
+              {showSeparator && (
+                <div className="w-6 h-px my-1" style={{ backgroundColor: 'var(--border-subtle)' }} />
               )}
-              style={isActive ? { background: 'linear-gradient(90deg, rgba(29,161,196,0.08) 0%, transparent 80%)' } : undefined}
-            >
-              {/* Active bar */}
-              {isActive && (
-                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r bg-[var(--accent-primary)]" />
-              )}
-              {NavIcon && <NavIcon size={18} weight={isActive ? 'fill' : 'regular'} />}
-              <span className="text-[9px] font-medium uppercase tracking-[0.4px] leading-none">
-                {item.label}
-              </span>
-            </Link>
+              <Link
+                href={item.path}
+                className={cn(
+                  'relative w-[44px] h-[44px] flex flex-col items-center justify-center gap-0.5',
+                  'rounded-md cursor-pointer transition-colors duration-150',
+                  isActive
+                    ? 'text-[var(--accent-primary)]'
+                    : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[rgba(255,255,255,0.03)]'
+                )}
+                style={
+                  isActive
+                    ? { background: 'linear-gradient(90deg, rgba(29,161,196,0.08) 0%, transparent 80%)' }
+                    : isPelicanItem
+                      ? { background: 'rgba(29,161,196,0.04)' }
+                      : undefined
+                }
+              >
+                {/* Active bar */}
+                {isActive && (
+                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r bg-[var(--accent-primary)]" />
+                )}
+                {NavIcon && <NavIcon size={18} weight={isActive ? 'fill' : 'regular'} />}
+                <span className="text-[9px] font-medium uppercase tracking-[0.4px] leading-none">
+                  {item.label}
+                </span>
+              </Link>
+            </Fragment>
           )
         })}
       </nav>

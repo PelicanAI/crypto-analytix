@@ -178,6 +178,107 @@ export const MOCK_SPARKLINES: Record<string, number[]> = {
 }
 
 // ---------------------------------------------------------------------------
+// Top Movers — dashboard table with volume and Pelican signals
+// ---------------------------------------------------------------------------
+
+export interface TopMover {
+  asset: string
+  name: string
+  price: number
+  change_24h: number
+  change_7d: number
+  volume_24h: number
+  pelican_signal: string
+  pelican_signal_type: 'accumulation' | 'momentum' | 'distribution' | 'whale' | 'smart-money'
+}
+
+export const MOCK_TOP_MOVERS: TopMover[] = [
+  {
+    asset: 'BTC', name: 'Bitcoin', price: 84230,
+    change_24h: 3.42, change_7d: 7.44,
+    volume_24h: 74_200_000_000,
+    pelican_signal: 'Accumulation Zone',
+    pelican_signal_type: 'accumulation',
+  },
+  {
+    asset: 'ETH', name: 'Ethereum', price: 2180,
+    change_24h: -1.87, change_7d: -6.84,
+    volume_24h: 28_600_000_000,
+    pelican_signal: 'Distribution',
+    pelican_signal_type: 'distribution',
+  },
+  {
+    asset: 'SOL', name: 'Solana', price: 138.5,
+    change_24h: 5.12, change_7d: -2.46,
+    volume_24h: 8_900_000_000,
+    pelican_signal: 'Momentum Breakout',
+    pelican_signal_type: 'momentum',
+  },
+  {
+    asset: 'AVAX', name: 'Avalanche', price: 34.8,
+    change_24h: -0.85, change_7d: -1.97,
+    volume_24h: 1_200_000_000,
+    pelican_signal: 'Whale Alert',
+    pelican_signal_type: 'whale',
+  },
+  {
+    asset: 'LINK', name: 'Chainlink', price: 16.85,
+    change_24h: 8.24, change_7d: 18.66,
+    volume_24h: 2_400_000_000,
+    pelican_signal: 'Smart Money Inflow',
+    pelican_signal_type: 'smart-money',
+  },
+]
+
+// ---------------------------------------------------------------------------
+// Smart Money Activity — dashboard feed with Pelican commentary
+// ---------------------------------------------------------------------------
+
+export interface SmartMoneyEntry {
+  id: string
+  time: string
+  wallet_label: string
+  action: string
+  asset: string
+  amount_display: string
+  amount_usd: number
+  pelican_commentary: string
+}
+
+export const MOCK_SMART_MONEY_FEED: SmartMoneyEntry[] = [
+  {
+    id: 'sm-1', time: new Date(Date.now() - 12 * 60000).toISOString(),
+    wallet_label: 'Wintermute', action: 'Accumulated',
+    asset: 'ETH', amount_display: '2,400 ETH', amount_usd: 5_232_000,
+    pelican_commentary: 'Wintermute has been net accumulating ETH for 3 consecutive days — their largest buying streak since November. Historically precedes a 5-8% move within 72 hours.',
+  },
+  {
+    id: 'sm-2', time: new Date(Date.now() - 38 * 60000).toISOString(),
+    wallet_label: 'Jump Trading', action: 'Distributed',
+    asset: 'SOL', amount_display: '18,500 SOL', amount_usd: 2_562_250,
+    pelican_commentary: 'Jump reducing SOL exposure after holding since $98. Their exit timing has been 73% accurate over the past year — a notable contrarian signal for SOL holders.',
+  },
+  {
+    id: 'sm-3', time: new Date(Date.now() - 2.5 * 3600000).toISOString(),
+    wallet_label: 'Smart Money Fund', action: 'Accumulated',
+    asset: 'LINK', amount_display: '250,000 LINK', amount_usd: 4_212_500,
+    pelican_commentary: 'Third institutional wallet to accumulate LINK this week. Combined smart money inflow has exceeded $12M — the highest since LINK\'s breakout above $12 in October.',
+  },
+  {
+    id: 'sm-4', time: new Date(Date.now() - 4 * 3600000).toISOString(),
+    wallet_label: 'Alameda Remnant', action: 'Transferred',
+    asset: 'BTC', amount_display: '420 BTC', amount_usd: 35_376_600,
+    pelican_commentary: 'Estate-related transfer to Coinbase Prime custody. Not a market sell — settlement movement. No immediate price impact expected, but watch for follow-up distribution.',
+  },
+  {
+    id: 'sm-5', time: new Date(Date.now() - 7 * 3600000).toISOString(),
+    wallet_label: 'Galaxy Digital', action: 'Accumulated',
+    asset: 'BTC', amount_display: '180 BTC', amount_usd: 15_161_400,
+    pelican_commentary: 'Galaxy adding to their long-term BTC position. They have accumulated on every dip below $85K this quarter — consistent with their public thesis of $120K by year-end.',
+  },
+]
+
+// ---------------------------------------------------------------------------
 // Mock funding rate context — TradFi-translated descriptions for Pelican
 // ---------------------------------------------------------------------------
 

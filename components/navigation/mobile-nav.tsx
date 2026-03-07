@@ -2,18 +2,27 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { House, Lightning, CalendarBlank, GraduationCap, ChatCircle, Bird, ArrowSquareOut, type Icon } from '@phosphor-icons/react'
+import { House, Lightning, CalendarBlank, GraduationCap, ChatCircle, Bird, ArrowSquareOut, SquaresFour, Wallet, TrendUp, MagnifyingGlass, Bell, type Icon } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 import { NAV_ITEMS } from '@/lib/constants'
 
 const iconMap: Record<string, Icon> = {
+  SquaresFour,
   House,
+  Wallet,
   Lightning,
   CalendarBlank,
   GraduationCap,
   ChatCircle,
   Bird,
+  TrendUp,
+  MagnifyingGlass,
+  Bell,
 }
+
+// Show only the 6 most important items on mobile bottom bar
+const MOBILE_NAV_IDS = ['dashboard', 'portfolio', 'signals', 'pelican-portal', 'learn', 'community']
+const mobileItems = NAV_ITEMS.filter(item => MOBILE_NAV_IDS.includes(item.id))
 
 export default function MobileNav() {
   const pathname = usePathname()
@@ -30,7 +39,7 @@ export default function MobileNav() {
         paddingTop: '8px',
       }}
     >
-      {NAV_ITEMS.map((item) => {
+      {mobileItems.map((item) => {
         const NavIcon = iconMap[item.iconName]
         const isActive = !item.external && (pathname === item.path || pathname.startsWith(item.path + '/'))
 

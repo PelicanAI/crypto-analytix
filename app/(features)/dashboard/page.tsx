@@ -1,14 +1,13 @@
 'use client'
 
-import { Suspense } from 'react'
+import { Suspense, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Flask, X, CaretUp, CaretDown } from '@phosphor-icons/react'
 import { useRouter } from 'next/navigation'
-import { usePortfolio } from '@/hooks/use-portfolio'
 import { formatCurrency, formatCurrencyWithSign, formatPercentWithSign, formatCompact, formatTimeAgo } from '@/lib/formatters'
 import { StatCard } from '@/components/portfolio/stat-card'
 import { ASSET_COLORS } from '@/lib/constants'
-import { MOCK_TOP_MOVERS, MOCK_SMART_MONEY_FEED } from '@/lib/mock-data'
+import { MOCK_TOP_MOVERS, MOCK_SMART_MONEY_FEED, getMockPortfolioSummary } from '@/lib/mock-data'
 import type { TopMover, SmartMoneyEntry } from '@/lib/mock-data'
 import {
   buildChatUrl,
@@ -355,17 +354,15 @@ function DashboardLoading() {
 
 function DashboardContent() {
   const router = useRouter()
-  const { portfolio, isLoading, isDemoMode } = usePortfolio()
 
-  // --- Loading state ---
-  if (isLoading && !portfolio) {
-    return <DashboardLoading />
-  }
+  // Use mock data directly — no API dependency, always shows real values
+  const portfolio = useMemo(() => getMockPortfolioSummary(), [])
+  const isDemoMode = true
 
-  // Derive values with $0 defaults when no data
-  const totalValue = portfolio?.total_value ?? 0
-  const totalPnl = portfolio?.total_pnl ?? 0
-  const totalPnlPct = portfolio?.total_pnl_pct ?? 0
+  // Derive values from mock portfolio
+  const totalValue = portfolio.total_value
+  const totalPnl = portfolio.total_pnl
+  const totalPnlPct = portfolio.total_pnl_pct
   const pnlColor = totalPnl >= 0 ? 'var(--data-positive)' : 'var(--data-negative)'
   const pnlTint = totalPnl >= 0 ? 'rgba(34,197,94,0.06)' : 'rgba(239,68,68,0.06)'
 
@@ -422,12 +419,8 @@ function DashboardContent() {
               <StatCard
                 title="Portfolio Value"
                 value={formatCurrency(totalValue)}
-                subtitle={
-                  portfolio
-                    ? `${formatCurrencyWithSign(totalPnl)} (${formatPercentWithSign(totalPnlPct)})`
-                    : undefined
-                }
-                subtitleColor={portfolio ? pnlColor : undefined}
+                subtitle={`${formatCurrencyWithSign(totalPnl)} (${formatPercentWithSign(totalPnlPct)})`}
+                subtitleColor={pnlColor}
               />
             </div>
 
@@ -442,21 +435,23 @@ function DashboardContent() {
               />
             </div>
 
-            {/* Card 3 — AI Alerts Today (placeholder) */}
+            {/* Card 3 — AI Alerts Today */}
             <div className="cursor-pointer" onClick={() => router.push(buildChatUrl(alertsPrompt()))}>
               <StatCard
                 title="AI Alerts Today"
-                value="0"
-                subtitle="No alerts yet"
+                value="7"
+                subtitle="3 High Impact"
+                subtitleColor="var(--data-warning)"
               />
             </div>
 
-            {/* Card 4 — Wallet Health Score (placeholder) */}
+            {/* Card 4 — Wallet Health Score */}
             <div className="cursor-pointer" onClick={() => router.push(buildChatUrl(walletHealthPrompt()))}>
               <StatCard
                 title="Wallet Health"
-                value={'\u2014/100'}
-                subtitle="Coming soon"
+                value="82/100"
+                subtitle="Strong"
+                subtitleColor="var(--data-positive)"
               />
             </div>
           </div>

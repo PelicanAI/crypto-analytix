@@ -12,12 +12,20 @@ export const PLAN_TIERS = {
 export type PlanType = keyof typeof PLAN_TIERS
 
 export const NAV_ITEMS = [
-  { id: 'portfolio', label: 'Home', path: '/portfolio', iconName: 'House', external: false },
-  { id: 'pelican-portal', label: 'Pelican', path: '/pelican-portal', iconName: 'Bird', external: false },
-  { id: 'signals', label: 'Signals', path: '/signals', iconName: 'Lightning', external: false },
-  { id: 'calendar', label: 'Calendar', path: '/calendar', iconName: 'CalendarBlank', external: false },
-  { id: 'learn', label: 'Learn', path: '/learn', iconName: 'GraduationCap', external: false },
-  { id: 'community', label: 'Chat', path: 'https://www.forexanalytix.com/community', iconName: 'ChatCircle', external: true },
+  // MARKETS
+  { id: 'dashboard', label: 'Dashboard', path: '/dashboard', iconName: 'SquaresFour', external: false, group: 'markets' },
+  { id: 'portfolio', label: 'Portfolio', path: '/portfolio', iconName: 'Wallet', external: false, group: 'markets' },
+  { id: 'screener', label: 'Screener', path: '/screener', iconName: 'MagnifyingGlass', external: false, group: 'markets' },
+  // INTELLIGENCE
+  { id: 'signals', label: 'Signals', path: '/signals', iconName: 'Lightning', external: false, group: 'intelligence' },
+  { id: 'calendar', label: 'Calendar', path: '/calendar', iconName: 'CalendarBlank', external: false, group: 'intelligence' },
+  { id: 'smart-money', label: 'Whales', path: '/smart-money', iconName: 'TrendUp', external: false, group: 'intelligence' },
+  // PELICAN AI
+  { id: 'pelican-portal', label: 'Pelican', path: '/pelican-portal', iconName: 'Bird', external: false, group: 'pelican' },
+  { id: 'alerts', label: 'Alerts', path: '/alerts', iconName: 'Bell', external: false, group: 'pelican' },
+  // LEARN & COMMUNITY
+  { id: 'learn', label: 'Learn', path: '/learn', iconName: 'GraduationCap', external: false, group: 'learn' },
+  { id: 'community', label: 'Chat', path: 'https://www.forexanalytix.com/community', iconName: 'ChatCircle', external: true, group: 'learn' },
 ] as const
 
 export const REFRESH_INTERVALS = {

@@ -129,12 +129,53 @@ function BriefHeader() {
   )
 }
 
+function SmartMoneyHeader() {
+  return (
+    <div className="flex items-center gap-2.5">
+      <span className="text-[10px] uppercase tracking-[1.5px] font-medium text-[var(--text-muted)]">
+        Smart Money Tracker
+      </span>
+      <LiveDot size={6} />
+      <span className="text-[11px] text-[var(--text-muted)]">Live</span>
+    </div>
+  )
+}
+
+function ScreenerHeader() {
+  return (
+    <div className="flex items-center gap-2.5">
+      <span className="text-[10px] uppercase tracking-[1.5px] font-medium text-[var(--text-muted)]">
+        Token Screener
+      </span>
+    </div>
+  )
+}
+
+function AlertsHeader() {
+  return (
+    <div className="flex items-center gap-2.5">
+      <span className="text-[10px] uppercase tracking-[1.5px] font-medium text-[var(--text-muted)]">
+        AI Alerts
+      </span>
+      <span
+        className="inline-flex items-center rounded-full px-1.5 py-0.5 font-mono text-[10px] tabular-nums font-medium"
+        style={{
+          background: 'var(--accent-muted)',
+          color: 'var(--accent-primary)',
+        }}
+      >
+        7 New
+      </span>
+    </div>
+  )
+}
+
 const ROUTE_LABELS: Record<string, string> = {
+  '/dashboard': 'Dashboard',
   '/calendar': 'Calendar',
   '/learn': 'Learn',
   '/community': 'Community',
   '/settings': 'Settings',
-  '/alerts': 'Alerts',
   '/watchlist': 'Watchlist',
 }
 
@@ -157,6 +198,15 @@ export default function HeaderBar() {
     }
     if (pathname === '/brief') {
       return <BriefHeader />
+    }
+    if (pathname === '/smart-money') {
+      return <SmartMoneyHeader />
+    }
+    if (pathname === '/screener') {
+      return <ScreenerHeader />
+    }
+    if (pathname === '/alerts') {
+      return <AlertsHeader />
     }
     const label = ROUTE_LABELS[pathname] || pathname.split('/').pop()?.replace(/-/g, ' ') || ''
     return <PageHeader label={label.charAt(0).toUpperCase() + label.slice(1)} />
