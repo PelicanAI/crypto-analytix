@@ -51,3 +51,15 @@
 20. **Context providers nest inside PelicanPanelProvider** — New providers (GlossaryProvider) go inside PelicanPanelProvider, not outside. This ensures any provider that needs Pelican panel context can access it. The nesting order in features layout: PelicanPanelProvider → GlossaryProvider → FeaturesContent.
 
 21. **Mock education content is product content** — The 7 education modules with TradFi-bridged explanations are core product content, not throwaway mock data. When seeding the database, use the exact same content from MOCK_EDUCATION_MODULES. The TradFi analogs (e.g., "funding rate is like overnight repo rate") are the product's key differentiator from generic crypto education.
+
+## Session 10 — Community, Calendar, Watchlist, Settings, Pelican Portal
+
+22. **Client components cannot export route segment configs** — `export const dynamic = 'force-dynamic'` is a Next.js route segment config that only works in Server Components (page.tsx without 'use client') or layout.tsx. If a page.tsx has 'use client', the dynamic export is silently ignored or causes issues. Only use it on API routes and Server Component pages.
+
+23. **Lazy Supabase client init in client components** — Creating `createBrowserClient()` at the component body level can cause SSR hydration issues when NEXT_PUBLIC env vars aren't available during SSG. Use `useRef` with lazy initialization inside a getter function to defer creation until first use in an event handler or effect.
+
+24. **Streaming hook reuse across consumers** — The `useStreamingChat` hook (Layer 2) works identically for both the Pelican Panel (contextual pop-outs) and Pelican Portal (full chat). The Portal hook (`use-pelican-portal.ts`) wraps `useStreamingChat` with conversation state management, proving the three-layer architecture works: same streaming layer, different UI consumers.
+
+25. **Portfolio data stripping for shared insights** — When users share Pelican insights to the community, portfolio-specific data must be stripped. Use regex patterns to catch dollar amounts preceded by possessives ("your $43,799 BTC position" → "your BTC position") while preserving general market prices ("BTC is trading at $84,230"). Seven regex patterns cover the common cases.
+
+26. **6-agent parallel build with strict file ownership** — Session 10 used 6 agents (1 shared/DB agent + 5 feature agents) running in parallel with zero file collisions. The key: Agent 6 (shared deps) runs first and completes before launching the 5 feature agents. Each feature agent owns a strict set of files (page, hook, API route). Review agent runs last to catch cross-cutting issues.

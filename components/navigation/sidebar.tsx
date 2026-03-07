@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { House, Lightning, CalendarBlank, GraduationCap, ChatCircle, type Icon } from '@phosphor-icons/react'
+import { House, Lightning, CalendarBlank, GraduationCap, ChatCircle, Bird, ArrowSquareOut, type Icon } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 import { NAV_ITEMS } from '@/lib/constants'
 
@@ -12,6 +12,7 @@ const iconMap: Record<string, Icon> = {
   CalendarBlank,
   GraduationCap,
   ChatCircle,
+  Bird,
 }
 
 export default function Sidebar() {
@@ -33,8 +34,30 @@ export default function Sidebar() {
       {/* Nav items */}
       <nav className="flex flex-col items-center gap-0.5 flex-1">
         {NAV_ITEMS.map((item) => {
-          const Icon = iconMap[item.iconName]
-          const isActive = pathname === item.path || pathname.startsWith(item.path + '/')
+          const NavIcon = iconMap[item.iconName]
+          const isActive = !item.external && (pathname === item.path || pathname.startsWith(item.path + '/'))
+
+          if (item.external) {
+            return (
+              <a
+                key={item.id}
+                href={item.path}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={cn(
+                  'relative w-[44px] h-[44px] flex flex-col items-center justify-center gap-0.5',
+                  'rounded-md cursor-pointer transition-colors duration-150',
+                  'text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[rgba(255,255,255,0.03)]'
+                )}
+              >
+                {NavIcon && <NavIcon size={18} weight="regular" />}
+                <span className="text-[8px] uppercase tracking-[0.5px] leading-none flex items-center gap-0.5">
+                  {item.label}
+                  <ArrowSquareOut size={7} className="text-[var(--text-muted)]" />
+                </span>
+              </a>
+            )
+          }
 
           return (
             <Link
@@ -52,7 +75,7 @@ export default function Sidebar() {
               {isActive && (
                 <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-5 rounded-r bg-[var(--accent-primary)]" />
               )}
-              {Icon && <Icon size={18} weight={isActive ? 'fill' : 'regular'} />}
+              {NavIcon && <NavIcon size={18} weight={isActive ? 'fill' : 'regular'} />}
               <span className="text-[8px] uppercase tracking-[0.5px] leading-none">
                 {item.label}
               </span>

@@ -110,6 +110,7 @@ const ROUTE_LABELS: Record<string, string> = {
   '/settings': 'Settings',
   '/alerts': 'Alerts',
   '/pelican-portal': 'Pelican Portal',
+  '/watchlist': 'Watchlist',
 }
 
 export default function HeaderBar() {

@@ -12,11 +12,12 @@ export const PLAN_TIERS = {
 export type PlanType = keyof typeof PLAN_TIERS
 
 export const NAV_ITEMS = [
-  { id: 'portfolio', label: 'Home', path: '/portfolio', iconName: 'House' },
-  { id: 'signals', label: 'Signals', path: '/signals', iconName: 'Lightning' },
-  { id: 'calendar', label: 'Calendar', path: '/calendar', iconName: 'CalendarBlank' },
-  { id: 'learn', label: 'Learn', path: '/learn', iconName: 'GraduationCap' },
-  { id: 'community', label: 'Chat', path: '/community', iconName: 'ChatCircle' },
+  { id: 'portfolio', label: 'Home', path: '/portfolio', iconName: 'House', external: false },
+  { id: 'pelican-portal', label: 'Pelican', path: '/pelican-portal', iconName: 'Bird', external: false },
+  { id: 'signals', label: 'Signals', path: '/signals', iconName: 'Lightning', external: false },
+  { id: 'calendar', label: 'Calendar', path: '/calendar', iconName: 'CalendarBlank', external: false },
+  { id: 'learn', label: 'Learn', path: '/learn', iconName: 'GraduationCap', external: false },
+  { id: 'community', label: 'Chat', path: 'https://www.forexanalytix.com/community', iconName: 'ChatCircle', external: true },
 ] as const
 
 export const REFRESH_INTERVALS = {

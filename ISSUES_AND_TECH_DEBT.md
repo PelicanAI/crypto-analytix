@@ -1,6 +1,6 @@
 # Crypto Analytix — Issues & Tech Debt Tracker
 
-Last updated: March 7, 2026 (after Session 8 — Onboarding + Education + Glossary)
+Last updated: March 7, 2026 (after Session 10 — Community, Calendar, Watchlist, Settings, Pelican Portal)
 
 ## Priority Levels
 - **P0 — Fix before next session.** Will cause bugs or security issues if left.
@@ -106,12 +106,37 @@ Converted `components/pelican-panel/pelican-icon.tsx` to a re-export of the cano
 **When:** Before public launch.
 
 ### 19. Placeholder hooks return untyped empty objects
-**Files:** `hooks/use-credits.ts` and remaining stubs
+**Files:** `hooks/use-credits.ts`, `hooks/use-notifications.ts`, `hooks/use-behavior.ts`
 **Issue:** Stubs return `{}` which TypeScript treats as `Record<string, never>`.
 **Fix:** When implementing each hook, define the return interface first, then implement.
-**When:** Each session that implements a hook.
+**When:** Post-launch polish.
 **Partial fix Session 6:** `use-portfolio.ts` and `use-snaptrade.ts` now fully typed with SWR.
 **Partial fix Session 7:** `use-signals.ts` now fully typed with SWR, filter state, and cursor pagination.
+**Partial fix Session 10:** `use-community.ts`, `use-calendar.ts`, `use-watchlist.ts`, `use-pelican-portal.ts` all fully typed.
+
+### 27. Calendar and watchlist API routes always use mock data
+**Files:** `app/api/calendar/route.ts`, `app/api/watchlist/route.ts`
+**Issue:** These routes fall back to mock data when DB tables are empty (which they are since no real data has been seeded). Correct for development.
+**Fix:** Seed calendar_events table with real upcoming events. Remove mock fallback when real data pipelines exist.
+**When:** When data ingestion pipelines are built.
+
+### 28. Pelican Portal share-to-community uses clipboard only
+**File:** `hooks/use-pelican-portal.ts`, `app/api/community/insights/route.ts`
+**Issue:** The "Share to Community" mechanic copies formatted text to clipboard for manual pasting into ForexAnalytix chat. This is by design for MVP (ForexAnalytix has their own chat platform). Future: direct API integration with ForexAnalytix chat.
+**Fix:** When ForexAnalytix provides an API for posting messages, replace clipboard copy with direct POST.
+**When:** When ForexAnalytix API integration is negotiated.
+
+### 29. Settings notification preferences not connected to alert engine
+**File:** `app/(features)/settings/page.tsx`
+**Issue:** Notification toggle preferences save to the `notification_preferences` table, but no alert trigger engine reads them yet. The toggles control what WILL be delivered once the alert system is built (Phase 2).
+**Fix:** Build the alert trigger engine that reads notification_preferences when generating alerts.
+**When:** Phase 2 — Intelligence Layer.
+
+### 30. Account deletion needs cascade verification
+**File:** `app/api/account/delete/route.ts`
+**Issue:** Uses `admin.auth.admin.deleteUser()` which deletes the auth user. CASCADE constraints should handle user data cleanup, but this hasn't been tested with real data across all tables.
+**Fix:** Test full account deletion flow with a test account that has data in all tables. Verify no orphaned records remain.
+**When:** Before beta launch.
 
 ### 24. Education API always uses mock data
 **File:** `app/api/education/route.ts`, `hooks/use-education.ts`
@@ -165,6 +190,13 @@ Converted `components/pelican-panel/pelican-icon.tsx` to a re-export of the cano
 | — | Education stub page (empty state only) | Mar 7, 2026 | Session 8 |
 | — | Education API stub (returns message only) | Mar 7, 2026 | Session 8 |
 | — | Glossary crypto-terms.json empty | Mar 7, 2026 | Session 8 |
+| — | Community stub page (empty state only) | Mar 7, 2026 | Session 10 |
+| — | Calendar stub page (empty state only) | Mar 7, 2026 | Session 10 |
+| — | Watchlist stub page + hook (empty) | Mar 7, 2026 | Session 10 |
+| — | Settings stub page (empty state only) | Mar 7, 2026 | Session 10 |
+| — | Pelican Portal page missing entirely | Mar 7, 2026 | Session 10 |
+| — | Nav missing Pelican Portal + external Chat | Mar 7, 2026 | Session 10 |
+| — | No calendar_events, watchlist, portal DB tables | Mar 7, 2026 | Session 10 |
 
 ---
 

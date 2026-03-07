@@ -20,33 +20,36 @@
 - [x] `npm run build` passes with zero errors
 
 ## Phase C: SnapTrade + Portfolio
-- [ ] lib/snaptrade.ts, API routes
-- [ ] lib/coingecko.ts, lib/coinalyze.ts
-- [ ] use-portfolio.ts, portfolio page with holdings table
-- [ ] Sparklines, Pelican icons
-- [ ] `npm run build` must pass
+- [x] lib/snaptrade.ts, API routes
+- [x] lib/coingecko.ts, lib/coinalyze.ts
+- [x] use-portfolio.ts, portfolio page with holdings table
+- [x] Sparklines, Pelican icons
+- [x] `npm run build` must pass
 
 ## Phase D: Brief + What I Missed
-- [ ] Brief API, use-brief.ts
-- [ ] Brief page with 2x2 card grid, severity tags, Pelican icons
-- [ ] What I Missed overlay
-- [ ] `npm run build` must pass
+- [x] Brief API, use-brief.ts
+- [x] Brief page with 2x2 card grid, severity tags, Pelican icons
+- [x] What I Missed overlay
+- [x] `npm run build` must pass
 
 ## Phase E: Signals + Analyst Feed
-- [ ] Signal API, use-signals.ts
-- [ ] Signals page with filter tabs
-- [ ] CT translations, analyst cards, wallet signals
-- [ ] `npm run build` must pass
+- [x] Signal API, use-signals.ts
+- [x] Signals page with filter tabs
+- [x] CT translations, analyst cards, wallet signals
+- [x] `npm run build` must pass
 
 ## Phase F: Onboarding + Education
-- [ ] 3-question onboarding
-- [ ] Education modules, crypto glossary
-- [ ] Progress tracking
-- [ ] `npm run build` must pass
+- [x] 3-question onboarding
+- [x] Education modules, crypto glossary
+- [x] Progress tracking
+- [x] `npm run build` must pass
 
-## Phase G: Community + Calendar + Watchlist + Settings
-- [ ] Community chat (Supabase Realtime)
-- [ ] Crypto event calendar
-- [ ] Watchlist with alerts
-- [ ] Settings page
-- [ ] `npm run build` must pass
+## Phase G: Community + Calendar + Watchlist + Settings + Pelican Portal
+- [x] Community link-out to ForexAnalytix + shared insights with clipboard copy + 3/day limit
+- [x] Crypto event calendar with month grid, event dots, event cards, Pelican integration
+- [x] Watchlist with add/remove, table with prices/funding/sparklines, alert CRUD
+- [x] Settings page (account, connections, notifications, Pelican preferences, delete account)
+- [x] Pelican Portal — full-chat tab with streaming, conversation history, share to community
+- [x] Navigation updated: 6 items (Home, Pelican, Signals, Calendar, Learn, Chat external)
+- [x] Database migrations: shared_insights, calendar_events, watchlist, watchlist_alerts, pelican_portal_conversations, pelican_portal_messages
+- [x] `npm run build` passes with zero errors (39 routes)
