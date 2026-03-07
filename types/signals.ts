@@ -8,9 +8,10 @@ export interface AnalystPost {
   analyst_name: string
   asset: string
   direction: 'bullish' | 'bearish' | 'neutral'
-  methodology: AnalystMethodology
+  methodology: AnalystMethodology | string
   title: string
   body: string
+  key_levels?: Record<string, number> | null
   confidence: number
   created_at: string
 }
@@ -22,7 +23,7 @@ export interface CTSignal {
   translated_text: string | null
   assets: string[]
   signal_type: string
-  engagement: string | null
+  engagement: { likes: number; retweets: number; replies: number } | null
   created_at: string
 }
 
@@ -34,6 +35,20 @@ export interface WalletSignal {
   action: 'accumulate' | 'distribute' | 'transfer'
   asset: string
   amount_usd: number
+  tx_hash?: string | null
+  chain?: string | null
+  created_at: string
+}
+
+export interface MacroTranslation {
+  id: string
+  source_type: string
+  source_title: string
+  source_summary: string | null
+  crypto_translation: string
+  affected_assets: string[]
+  macro_indicator: string | null
+  direction: string | null
   created_at: string
 }
 
@@ -41,3 +56,12 @@ export type SignalFeedItem =
   | { type: 'analyst'; data: AnalystPost }
   | { type: 'ct'; data: CTSignal }
   | { type: 'onchain'; data: WalletSignal }
+  | { type: 'macro'; data: MacroTranslation }
+
+export type SignalFilter = 'all' | 'analyst' | 'ct' | 'onchain' | 'macro'
+
+export interface SignalFeedResponse {
+  signals: SignalFeedItem[]
+  has_more: boolean
+  next_cursor: string | null
+}

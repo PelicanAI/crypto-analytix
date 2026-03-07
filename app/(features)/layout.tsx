@@ -1,11 +1,19 @@
 'use client'
 
+import { Suspense } from 'react'
 import Sidebar from '@/components/navigation/sidebar'
 import HeaderBar from '@/components/navigation/header-bar'
 import MobileNav from '@/components/navigation/mobile-nav'
 import PelicanChatPanel from '@/components/pelican-panel/pelican-chat-panel'
+import WhatIMissed from '@/components/brief/what-i-missed'
 import { PelicanPanelProvider, usePelicanPanelContext } from '@/providers/pelican-panel-provider'
 import { PELICAN_PANEL_WIDTH } from '@/lib/constants'
+import { useBrief } from '@/hooks/use-brief'
+
+function WhatIMissedWrapper() {
+  const { whatIMissed, dismissWhatIMissed } = useBrief()
+  return <WhatIMissed data={whatIMissed} onDismiss={dismissWhatIMissed} />
+}
 
 function FeaturesContent({ children }: { children: React.ReactNode }) {
   const { state } = usePelicanPanelContext()
@@ -43,6 +51,11 @@ function FeaturesContent({ children }: { children: React.ReactNode }) {
 
       {/* Pelican AI panel */}
       <PelicanChatPanel />
+
+      {/* What I Missed overlay */}
+      <Suspense fallback={null}>
+        <WhatIMissedWrapper />
+      </Suspense>
     </div>
   )
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import useSWR from 'swr'
+import { useSearchParams } from 'next/navigation'
 import { REFRESH_INTERVALS } from '@/lib/constants'
 import type { CryptoPosition } from '@/types/portfolio'
 import type { FundingRateData } from '@/lib/coinalyze'
@@ -31,6 +32,7 @@ export interface UsePortfolioReturn {
   isLoading: boolean
   error: Error | null
   isStale: boolean
+  isDemoMode: boolean
   refresh: () => void
   lastUpdated: string | null
 }
@@ -53,12 +55,10 @@ async function portfolioFetcher(url: string): Promise<EnrichedPortfolioResponse>
 // ---------------------------------------------------------------------------
 
 export function usePortfolio(): UsePortfolioReturn {
-  // Check for ?mock=true in the page URL
-  const isMock =
-    typeof window !== 'undefined' &&
-    new URLSearchParams(window.location.search).get('mock') === 'true'
+  const searchParams = useSearchParams()
+  const isDemoMode = searchParams.get('mock') === 'true'
 
-  const url = isMock ? '/api/portfolio?mock=true' : '/api/portfolio'
+  const url = isDemoMode ? '/api/portfolio?mock=true' : '/api/portfolio'
 
   const { data, error, isLoading, mutate } = useSWR<EnrichedPortfolioResponse>(
     url,
@@ -77,6 +77,7 @@ export function usePortfolio(): UsePortfolioReturn {
     error: error ?? null,
     // Stale if the API says so, OR if SWR errored but we have cached data
     isStale: data?.is_stale === true || (!!error && !!data),
+    isDemoMode,
     refresh: () => mutate(),
     lastUpdated: data?.last_updated ?? null,
   }

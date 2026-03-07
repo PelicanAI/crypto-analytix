@@ -1,6 +1,6 @@
 # Crypto Analytix — Issues & Tech Debt Tracker
 
-Last updated: March 6, 2026 (after Session 6 — Portfolio data layer + home screen)
+Last updated: March 7, 2026 (after Session 7 — Signals intelligence feed)
 
 ## Priority Levels
 - **P0 — Fix before next session.** Will cause bugs or security issues if left.
@@ -111,6 +111,19 @@ Converted `components/pelican-panel/pelican-icon.tsx` to a re-export of the cano
 **Fix:** When implementing each hook, define the return interface first, then implement.
 **When:** Each session that implements a hook.
 **Partial fix Session 6:** `use-portfolio.ts` and `use-snaptrade.ts` now fully typed with SWR.
+**Partial fix Session 7:** `use-signals.ts` now fully typed with SWR, filter state, and cursor pagination.
+
+### 22. Signals API always uses mock data
+**File:** `app/api/signals/route.ts`, `hooks/use-signals.ts`
+**Issue:** The hook hardcodes `mock=true` in the query params. The API route falls back to mock data when tables are empty (which they are since no real data has been seeded yet). This is correct for development but needs to be removed when real data pipelines are built.
+**Fix:** Remove `mock: 'true'` from the hook URL builder when real analyst posts, CT signals, and wallet tracking data is being ingested.
+**When:** When the signal ingestion pipelines are built (Phase 2).
+
+### 23. Select dropdown styling in dark mode
+**File:** `app/(features)/signals/page.tsx`
+**Issue:** The asset filter `<select>` element uses native browser styling for the dropdown options. On some browsers this renders as white background with dark text, inconsistent with the dark theme.
+**Fix:** Replace with a custom dropdown component (shadcn Popover/Select or custom) that respects the design system.
+**When:** Polish pass before beta launch.
 
 ### 20. No database backup strategy
 **Issue:** Supabase free tier has limited backup options. Production data (user portfolios, conversation history, trade grades) needs backup.
@@ -128,6 +141,7 @@ Converted `components/pelican-panel/pelican-icon.tsx` to a re-export of the cano
 | 3 | Panel width is a magic number in two files | Mar 6, 2026 | P0 Fix Session |
 | 5 | console.log in tracking.ts (replaced with logger.info) | Mar 6, 2026 | P0 Fix Session |
 | 21 | shadcn v4 init broke build (Tailwind v4 syntax in v3 project) | Mar 6, 2026 | Pre-Session 6 |
+| 6 | Duplicate pelican-icon.tsx (re-exported) | Mar 6, 2026 | Session 6 |
 
 ---
 

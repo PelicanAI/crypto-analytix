@@ -55,6 +55,15 @@ export const SEVERITY_CONFIG = {
   negative: { label: 'BEARISH',  color: 'var(--data-negative)' },
   warning:  { label: 'CAUTION',  color: 'var(--data-warning)' },
   neutral:  { label: 'NEUTRAL',  color: 'var(--data-neutral)' },
+  // Methodology badges for analyst cards
+  harmonic:       { label: 'HARMONIC',      color: '#FF9F43' },
+  'elliott-wave': { label: 'ELLIOTT WAVE',  color: '#A78BFA' },
+  pfi:            { label: 'PFI',           color: '#FF6B6B' },
+  technical:      { label: 'TECHNICAL',     color: 'var(--accent-primary)' },
+  candlestick:    { label: 'CANDLESTICK',   color: '#F59E0B' },
+  // Macro direction badges
+  'crypto-bullish':  { label: 'CRYPTO BULLISH',  color: 'var(--data-positive)' },
+  'crypto-bearish':  { label: 'CRYPTO BEARISH',  color: 'var(--data-negative)' },
 } as const
 
 export type SeverityType = keyof typeof SEVERITY_CONFIG

@@ -33,3 +33,11 @@
 13. **Features layout must be 'use client' for PelicanPanelProvider** — The `(features)/layout.tsx` uses React context (PelicanPanelProvider), which requires client-side rendering. Use the inner component pattern: `FeaturesLayout` wraps with Provider, `FeaturesContent` consumes the context.
 
 14. **Panel content push, not overlay** — Desktop panel uses `marginRight: 440px` on the main content area so content pushes left. The panel doesn't overlay content. Mobile uses a bottom sheet with backdrop overlay instead.
+
+## Session 7 — Signals Intelligence Feed
+
+15. **Suspense boundary propagation via hooks** — If a hook uses `useSearchParams()` (like `usePortfolio`), EVERY component that calls that hook needs a Suspense boundary in its rendering tree. When the header bar started using `usePortfolio` for dynamic portfolio data, it inherited the Suspense requirement. Wrap the component in `<Suspense fallback={...}>` at the call site, not in the hook.
+
+16. **Stub component cleanup** — When replacing stub components (e.g., `signal-card.tsx` returning `null`) with real implementations using different file names (e.g., `analyst-card.tsx`), delete the old stubs. Otherwise imports from other files may reference the dead stubs and cause confusion. Always check for imports of deleted files.
+
+17. **Mock data fallback pattern for API routes** — API routes that query Supabase tables can fall back to mock data when tables are empty. This enables full UI development without requiring data pipelines. Pattern: query DB → if empty → return mock data. The `?mock=true` query param forces mock mode regardless. Remove when real data flows are built.

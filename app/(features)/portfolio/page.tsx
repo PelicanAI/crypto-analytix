@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { Suspense, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import {
@@ -9,6 +9,8 @@ import {
   CaretUp,
   CaretDown,
   Warning,
+  Flask,
+  X,
 } from '@phosphor-icons/react'
 import { usePortfolio, type EnrichedPosition } from '@/hooks/use-portfolio'
 import { useSnaptrade } from '@/hooks/use-snaptrade'
@@ -385,15 +387,15 @@ function PortfolioErrorState({ onRetry }: { onRetry: () => void }) {
 // Main page
 // ---------------------------------------------------------------------------
 
-export default function PortfolioPage() {
+function PortfolioPageContent() {
   const router = useRouter()
-  const { portfolio, isLoading, error, isStale, refresh, lastUpdated } = usePortfolio()
+  const { portfolio, isLoading, error, isStale, isDemoMode, refresh, lastUpdated } = usePortfolio()
   const { connect, isSyncing, sync, connections, isLoading: connectionsLoading } = useSnaptrade()
   const { openWithPrompt } = usePelicanPanelContext()
 
   const hasPositions = portfolio && portfolio.positions.length > 0
   const hasConnections = connections.length > 0
-  const showEmptyState = !isLoading && !connectionsLoading && !hasPositions && !hasConnections
+  const showEmptyState = !isLoading && !connectionsLoading && !hasPositions && !hasConnections && !isDemoMode
 
   // Sorted positions by allocation descending
   const sortedPositions = useMemo(() => {
@@ -486,6 +488,40 @@ Analyze this position. Include: risk assessment, funding rate implications (expl
           animate={{ opacity: 1 }}
           transition={{ duration: 0.25 }}
         >
+          {/* Demo Mode Banner */}
+          {isDemoMode && (
+            <div
+              className="flex items-center justify-between rounded-lg px-4 py-2.5 mb-6"
+              style={{
+                background: 'rgba(245,158,11,0.1)',
+                border: '1px solid rgba(245,158,11,0.2)',
+              }}
+            >
+              <div className="flex items-center gap-2">
+                <Flask size={16} weight="fill" style={{ color: 'var(--data-warning)' }} />
+                <span className="text-sm font-medium" style={{ color: 'var(--data-warning)' }}>
+                  Demo Mode
+                </span>
+                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                  — Viewing sample portfolio data
+                </span>
+              </div>
+              <button
+                onClick={() => router.push('/portfolio')}
+                className="flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-md cursor-pointer transition-colors duration-150"
+                style={{
+                  color: 'var(--data-warning)',
+                  background: 'rgba(245,158,11,0.1)',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(245,158,11,0.2)')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(245,158,11,0.1)')}
+              >
+                <X size={12} />
+                Exit Demo
+              </button>
+            </div>
+          )}
+
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>
@@ -599,5 +635,13 @@ Analyze this position. Include: risk assessment, funding rate implications (expl
         </motion.div>
       </AnimatePresence>
     </div>
+  )
+}
+
+export default function PortfolioPage() {
+  return (
+    <Suspense fallback={<PortfolioLoadingState />}>
+      <PortfolioPageContent />
+    </Suspense>
   )
 }
