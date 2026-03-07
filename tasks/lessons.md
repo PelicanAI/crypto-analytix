@@ -95,3 +95,15 @@
 38. **3-agent parallel polish with strict file ownership** — Polish Session B used 3 agents (sidebar, header, portfolio) with zero file collisions. Each agent owned its specific files and couldn't touch others. The shared CSS changes (globals.css) were made before launching agents to prevent conflicts. Pattern confirmed from Sessions 8, 10, Polish A.
 
 39. **Shimmer loading class in globals.css beats self-injecting keyframes** — The old `loading-skeleton.tsx` injected keyframes via `useEffect` + `document.createElement('style')`. Better to define `.shimmer` as a global CSS class with the keyframe and `background-size: 200% 100%` pattern. Components just add `className="shimmer"` — no runtime style injection needed.
+
+## Polish Session C — Signals, Brief, Calendar, Watchlist, Education, Onboarding, Settings, Community
+
+40. **4-agent worktree-isolated parallel polish with review agent** — Polish Session C used 4 agents in isolated git worktrees with strict file ownership (signals, brief+calendar, watchlist+onboarding, edu+settings+community). After all 4 completed, changes were copied from worktrees to main (no merge conflicts since zero file overlap). A 5th review agent then audited all 22 files for cross-page consistency and made 6 surgical fixes. Pattern: worktree isolation is overkill when file ownership is strict, but provides safety net at no cost.
+
+41. **Left accent borders color-code signal types** — A 3px left border on signal cards creates instant visual categorization: cyan (analyst), purple (CT), green (on-chain), amber (macro). Combined with a matching gradient tint at 4% opacity, each card type has a distinct identity without clashing. The border is the primary signal; the tint is the secondary reinforcement.
+
+42. **Review agent catches cross-agent inconsistencies** — When 4 agents polish independently, they each interpret specs slightly differently. The review agent found: heading sizes varied (18px vs 20px vs 22px), "In your portfolio" badges had extra styling in calendar vs signals, toggle switch dimensions were overridden by min-height. A dedicated review pass is essential after parallel polish work.
+
+43. **Standardize heading sizes with Tailwind utilities, not pixel values** — Agents independently chose `text-[18px]`, `text-[20px]`, `text-[22px]` for page headings. The fix: standardize on `text-xl` (Tailwind utility = 20px) across all pages. Using Tailwind utilities instead of arbitrary values prevents drift.
+
+44. **Settings page decomposition pattern** — A 1165-line settings page was split into 6 sub-components (account, connections, notifications, pelican, privacy, quick-links) averaging 175 lines each, with a 333-line composition page.tsx. Each section is self-contained with its own state management. The page.tsx handles layout and section ordering only.

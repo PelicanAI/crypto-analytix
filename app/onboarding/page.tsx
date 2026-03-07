@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import {
   ChartLineUp,
   CurrencyDollar,
@@ -13,9 +13,11 @@ import {
   ArrowsLeftRight,
   Lightning,
   Check,
+  Rocket,
 } from '@phosphor-icons/react'
 import type { Icon } from '@phosphor-icons/react'
 import { useOnboarding } from '@/hooks/use-onboarding'
+import { cn } from '@/lib/utils'
 
 // ---------------------------------------------------------------------------
 // Option data
@@ -72,26 +74,38 @@ const BACKGROUND_MAP: Record<string, { background: string[]; experience: string 
 // ---------------------------------------------------------------------------
 
 const stepVariants = {
-  initial: { opacity: 0, x: 40 },
+  initial: { opacity: 0, x: 20 },
   animate: { opacity: 1, x: 0 },
-  exit: { opacity: 0, x: -40 },
+  exit: { opacity: 0, x: -20 },
 }
 
 const stepTransition = { duration: 0.25, ease: 'easeInOut' as const }
+
+const reducedStepVariants = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1 },
+  exit: { opacity: 0 },
+}
+
+const reducedStepTransition = { duration: 0 }
 
 // ---------------------------------------------------------------------------
 // Sub-components
 // ---------------------------------------------------------------------------
 
-function ProgressDots({ current, total }: { current: number; total: number }) {
+function ProgressDots({ current, total, reducedMotion }: { current: number; total: number; reducedMotion: boolean }) {
   return (
     <div className="flex items-center gap-3 mb-10">
       {Array.from({ length: total }).map((_, i) => (
-        <div
+        <motion.div
           key={i}
-          className="w-2 h-2 rounded-full transition-all duration-300"
-          style={{
+          className="w-2 h-2 rounded-full"
+          animate={{
+            scale: i === current ? 1.1 : 1,
             backgroundColor: i === current ? 'var(--accent-primary)' : 'var(--bg-elevated)',
+          }}
+          transition={{ duration: reducedMotion ? 0 : 0.2, ease: 'easeOut' }}
+          style={{
             border: i === current ? 'none' : '1px solid var(--border-default)',
           }}
         />
@@ -106,56 +120,64 @@ function OptionCard({
   subtitle,
   selected,
   onClick,
+  reducedMotion,
 }: {
   icon?: Icon
   label: string
   subtitle: string
   selected: boolean
   onClick: () => void
+  reducedMotion: boolean
 }) {
   return (
     <motion.button
       type="button"
       onClick={onClick}
-      className="flex items-center gap-4 w-full px-5 py-4 rounded-xl cursor-pointer transition-all duration-200 text-left"
+      className={cn(
+        'relative flex items-center gap-4 w-full rounded-xl cursor-pointer text-left',
+        'transition-all duration-200',
+      )}
       style={{
+        padding: '16px 20px',
         backgroundColor: selected ? 'var(--accent-dim)' : 'var(--bg-surface)',
         borderWidth: '1px',
         borderStyle: 'solid',
-        borderColor: selected ? 'var(--accent-primary)' : 'var(--border-default)',
+        borderColor: selected ? 'var(--accent-primary)' : 'var(--border-subtle)',
+        transform: selected ? 'translateY(-1px)' : 'translateY(0)',
       }}
-      whileTap={{ scale: 0.98 }}
-      animate={{ scale: selected ? 1.02 : 1 }}
-      transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+      whileTap={reducedMotion ? undefined : { scale: 0.98 }}
       onMouseEnter={(e) => {
         if (!selected) {
           const el = e.currentTarget
           el.style.borderColor = 'var(--accent-muted)'
           el.style.backgroundColor = 'var(--bg-elevated)'
+          el.style.transform = 'translateY(-1px)'
         }
       }}
       onMouseLeave={(e) => {
         if (!selected) {
           const el = e.currentTarget
-          el.style.borderColor = 'var(--border-default)'
+          el.style.borderColor = 'var(--border-subtle)'
           el.style.backgroundColor = 'var(--bg-surface)'
+          el.style.transform = 'translateY(0)'
         }
       }}
     >
       {IconComponent && (
         <IconComponent
-          size={24}
+          size={28}
           weight="thin"
           style={{
             color: selected ? 'var(--accent-primary)' : 'var(--text-muted)',
             flexShrink: 0,
+            transition: 'color 200ms ease',
           }}
         />
       )}
       <div className="flex-1 min-w-0">
         <div
           className="font-medium leading-tight"
-          style={{ fontSize: '15px', color: 'var(--text-primary)' }}
+          style={{ fontSize: '14px', color: 'var(--text-primary)' }}
         >
           {label}
         </div>
@@ -166,12 +188,23 @@ function OptionCard({
           {subtitle}
         </div>
       </div>
+      {/* Checkmark in top-right when selected */}
       {selected && (
-        <Check
-          size={18}
-          weight="bold"
-          style={{ color: 'var(--accent-primary)', flexShrink: 0 }}
-        />
+        <div
+          className="flex items-center justify-center flex-shrink-0"
+          style={{
+            width: '20px',
+            height: '20px',
+            borderRadius: '10px',
+            background: 'var(--accent-primary)',
+          }}
+        >
+          <Check
+            size={12}
+            weight="bold"
+            style={{ color: '#fff' }}
+          />
+        </div>
       )}
     </motion.button>
   )
@@ -184,9 +217,11 @@ function OptionCard({
 function StepBackground({
   selectedId,
   onSelect,
+  reducedMotion,
 }: {
   selectedId: string | null
   onSelect: (id: string) => void
+  reducedMotion: boolean
 }) {
   return (
     <div>
@@ -211,6 +246,7 @@ function StepBackground({
             subtitle={opt.subtitle}
             selected={selectedId === opt.id}
             onClick={() => onSelect(opt.id)}
+            reducedMotion={reducedMotion}
           />
         ))}
       </div>
@@ -221,9 +257,11 @@ function StepBackground({
 function StepFamiliarity({
   selectedId,
   onSelect,
+  reducedMotion,
 }: {
   selectedId: string | null
   onSelect: (id: string) => void
+  reducedMotion: boolean
 }) {
   return (
     <div>
@@ -248,6 +286,7 @@ function StepFamiliarity({
             subtitle={opt.subtitle}
             selected={selectedId === opt.id}
             onClick={() => onSelect(opt.id)}
+            reducedMotion={reducedMotion}
           />
         ))}
       </div>
@@ -258,9 +297,11 @@ function StepFamiliarity({
 function StepInterests({
   selected,
   onToggle,
+  reducedMotion,
 }: {
   selected: string[]
   onToggle: (id: string) => void
+  reducedMotion: boolean
 }) {
   return (
     <div>
@@ -284,6 +325,7 @@ function StepInterests({
             subtitle={opt.subtitle}
             selected={selected.includes(opt.id)}
             onClick={() => onToggle(opt.id)}
+            reducedMotion={reducedMotion}
           />
         ))}
       </div>
@@ -308,6 +350,8 @@ export default function OnboardingPage() {
     submit,
     skip,
   } = useOnboarding()
+
+  const reducedMotion = useReducedMotion() ?? false
 
   // Derive which single background option is selected
   const selectedBackgroundId = (() => {
@@ -376,22 +420,28 @@ export default function OnboardingPage() {
     }
   }, [step, nextStep, submit])
 
+  const activeVariants = reducedMotion ? reducedStepVariants : stepVariants
+  const activeTransition = reducedMotion ? reducedStepTransition : stepTransition
+
   return (
-    <div
+    <motion.div
       className="min-h-screen flex flex-col items-center justify-center px-6 py-12"
       style={{ backgroundColor: 'var(--bg-base)' }}
+      initial={reducedMotion ? false : { opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: reducedMotion ? 0 : 0.3 }}
     >
       <div className="w-full max-w-[560px] flex flex-col items-center">
         {/* Logo / Brand */}
         <p
-          className="text-xs font-semibold tracking-[0.2em] uppercase mb-6"
-          style={{ color: 'var(--text-muted)' }}
+          className="text-xs font-semibold uppercase mb-6"
+          style={{ color: 'var(--text-muted)', letterSpacing: '0.2em' }}
         >
           Crypto Analytix
         </p>
 
         {/* Progress Dots */}
-        <ProgressDots current={step} total={3} />
+        <ProgressDots current={step} total={3} reducedMotion={reducedMotion} />
 
         {/* Step Content with AnimatePresence */}
         <div className="w-full">
@@ -399,15 +449,16 @@ export default function OnboardingPage() {
             {step === 0 && (
               <motion.div
                 key="step-0"
-                variants={stepVariants}
+                variants={activeVariants}
                 initial="initial"
                 animate="animate"
                 exit="exit"
-                transition={stepTransition}
+                transition={activeTransition}
               >
                 <StepBackground
                   selectedId={selectedBackgroundId}
                   onSelect={handleBackgroundSelect}
+                  reducedMotion={reducedMotion}
                 />
               </motion.div>
             )}
@@ -415,15 +466,16 @@ export default function OnboardingPage() {
             {step === 1 && (
               <motion.div
                 key="step-1"
-                variants={stepVariants}
+                variants={activeVariants}
                 initial="initial"
                 animate="animate"
                 exit="exit"
-                transition={stepTransition}
+                transition={activeTransition}
               >
                 <StepFamiliarity
                   selectedId={responses.crypto_familiarity || null}
                   onSelect={handleFamiliaritySelect}
+                  reducedMotion={reducedMotion}
                 />
               </motion.div>
             )}
@@ -431,15 +483,16 @@ export default function OnboardingPage() {
             {step === 2 && (
               <motion.div
                 key="step-2"
-                variants={stepVariants}
+                variants={activeVariants}
                 initial="initial"
                 animate="animate"
                 exit="exit"
-                transition={stepTransition}
+                transition={activeTransition}
               >
                 <StepInterests
                   selected={responses.interests}
                   onToggle={handleInterestToggle}
+                  reducedMotion={reducedMotion}
                 />
               </motion.div>
             )}
@@ -447,32 +500,67 @@ export default function OnboardingPage() {
         </div>
 
         {/* Continue / Get Started Button */}
-        <button
+        <motion.button
           type="button"
           onClick={handleContinue}
           disabled={!canProceed || isSubmitting}
-          className="mt-8 w-full max-w-sm py-3 rounded-xl font-medium transition-all duration-200"
+          className={cn(
+            'mt-8 w-full max-w-sm py-3 rounded-lg font-medium text-sm',
+            'flex items-center justify-center gap-2',
+            'transition-all duration-200',
+            'disabled:cursor-not-allowed',
+          )}
           style={{
-            background: canProceed && !isSubmitting ? 'var(--accent-gradient)' : 'var(--bg-elevated)',
-            color: canProceed && !isSubmitting ? 'var(--text-primary)' : 'var(--text-muted)',
-            cursor: canProceed && !isSubmitting ? 'pointer' : 'not-allowed',
-            opacity: isSubmitting ? 0.7 : 1,
+            background: canProceed && !isSubmitting
+              ? 'linear-gradient(135deg, #1A6FB5, #25BFDF)'
+              : 'var(--bg-elevated)',
+            color: canProceed && !isSubmitting ? '#fff' : 'var(--text-muted)',
+            opacity: isSubmitting ? 0.7 : canProceed ? 1 : 0.3,
             border: 'none',
+            cursor: canProceed && !isSubmitting ? 'pointer' : 'not-allowed',
+            boxShadow: canProceed && !isSubmitting
+              ? '0 2px 8px rgba(29,161,196,0.25)'
+              : 'none',
+          }}
+          whileHover={
+            canProceed && !isSubmitting && !reducedMotion
+              ? { scale: 1.01, filter: 'brightness(1.1)' }
+              : undefined
+          }
+          whileTap={
+            canProceed && !isSubmitting && !reducedMotion
+              ? { scale: 0.99 }
+              : undefined
+          }
+          onMouseEnter={(e) => {
+            if (canProceed && !isSubmitting) {
+              e.currentTarget.style.boxShadow = '0 4px 16px rgba(29,161,196,0.35)'
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (canProceed && !isSubmitting) {
+              e.currentTarget.style.boxShadow = '0 2px 8px rgba(29,161,196,0.25)'
+            }
           }}
         >
           {isSubmitting
             ? 'Setting up...'
             : step === 2
-              ? 'Get Started'
+              ? (
+                <>
+                  Get Started
+                  <Rocket size={16} weight="bold" />
+                </>
+              )
               : 'Continue'}
-        </button>
+        </motion.button>
 
         {/* Skip Link */}
         <button
           type="button"
           onClick={skip}
           disabled={isSubmitting}
-          className="mt-4 text-sm cursor-pointer transition-colors duration-200 bg-transparent border-none"
+          className="mt-4 text-[13px] cursor-pointer transition-colors duration-200 bg-transparent border-none"
           style={{
             color: 'var(--text-muted)',
           }}
@@ -489,7 +577,7 @@ export default function OnboardingPage() {
         {/* Error Message */}
         {error && (
           <motion.div
-            initial={{ opacity: 0, y: 8 }}
+            initial={reducedMotion ? false : { opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             className="mt-4 px-4 py-2 rounded-lg text-sm text-center"
             style={{
@@ -502,6 +590,6 @@ export default function OnboardingPage() {
           </motion.div>
         )}
       </div>
-    </div>
+    </motion.div>
   )
 }

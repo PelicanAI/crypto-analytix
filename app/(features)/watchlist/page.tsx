@@ -1,7 +1,7 @@
 'use client'
 
 import { Suspense, useState, useCallback, useMemo, useEffect, useRef } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import {
   Binoculars,
   Plus,
@@ -9,16 +9,20 @@ import {
   CaretUp,
   CaretDown,
   CaretRight,
-  Bell,
-  BellSlash,
   X,
 } from '@phosphor-icons/react'
 import { useWatchlist } from '@/hooks/use-watchlist'
 import { usePelicanPanelContext } from '@/providers/pelican-panel-provider'
 import { EmptyState } from '@/components/shared/empty-state'
-import { LoadingSkeleton } from '@/components/shared/loading-skeleton'
 import { PelicanIcon } from '@/components/shared/pelican-icon'
+import { Sparkline } from '@/components/portfolio/sparkline'
 import { ASSET_COLORS } from '@/lib/constants'
+import {
+  formatCurrency as fmtCurrency,
+  formatPercentWithSign,
+  formatFundingRate as fmtFundingRate,
+} from '@/lib/formatters'
+import { cn } from '@/lib/utils'
 import type { WatchlistItem, WatchlistAlert, AlertType } from '@/types/watchlist'
 
 // ---------------------------------------------------------------------------
@@ -44,78 +48,17 @@ const ALERT_TYPE_LABELS: Record<AlertType, string> = {
 const QUICK_ADD_TICKERS = ['DOGE', 'UNI', 'AAVE', 'ARB', 'OP', 'MATIC']
 
 // ---------------------------------------------------------------------------
-// Formatting helpers
+// Formatting helpers (match portfolio patterns exactly)
 // ---------------------------------------------------------------------------
 
 function formatCurrency(value: number): string {
-  if (value >= 1000) {
-    return '$' + value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-  }
-  if (value >= 1) {
-    return '$' + value.toFixed(2)
-  }
-  // Small values (sub-$1) — show more decimals
+  if (value >= 1) return fmtCurrency(value)
+  // Sub-$1 values — show more decimals
   return '$' + value.toFixed(4)
 }
 
-function formatPercent(value: number): string {
-  return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`
-}
-
 function formatFundingRate(rate: number): string {
-  const sign = rate >= 0 ? '+' : '\u2212'
-  return sign + (Math.abs(rate) * 100).toFixed(3) + '%'
-}
-
-// ---------------------------------------------------------------------------
-// MiniSparkline — same pattern as portfolio page
-// ---------------------------------------------------------------------------
-
-function MiniSparkline({
-  data,
-  width = 60,
-  height = 20,
-  color,
-}: {
-  data: number[]
-  width?: number
-  height?: number
-  color: string
-}) {
-  if (!data || data.length < 2) return null
-
-  const step = Math.max(1, Math.floor(data.length / 30))
-  const sampled = data.filter((_, i) => i % step === 0)
-
-  const min = Math.min(...sampled)
-  const max = Math.max(...sampled)
-  const range = max - min || 1
-
-  const points = sampled
-    .map((val, i) => {
-      const x = (i / (sampled.length - 1)) * width
-      const y = height - ((val - min) / range) * height
-      return `${x.toFixed(1)},${y.toFixed(1)}`
-    })
-    .join(' ')
-
-  return (
-    <svg
-      width={width}
-      height={height}
-      viewBox={`0 0 ${width} ${height}`}
-      className="inline-block ml-2 opacity-60"
-    >
-      <polyline
-        points={points}
-        fill="none"
-        stroke={color}
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  )
+  return fmtFundingRate(rate)
 }
 
 // ---------------------------------------------------------------------------
@@ -128,12 +71,14 @@ function AddAssetModal({
   onAdd,
   existingAssets,
   isAdding,
+  reducedMotion,
 }: {
   isOpen: boolean
   onClose: () => void
   onAdd: (asset: string, notes?: string) => Promise<void>
   existingAssets: string[]
   isAdding: boolean
+  reducedMotion: boolean
 }) {
   const [ticker, setTicker] = useState('')
   const [notes, setNotes] = useState('')
@@ -186,12 +131,12 @@ function AddAssetModal({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.15 }}
+          transition={{ duration: reducedMotion ? 0 : 0.15 }}
         >
           {/* Backdrop */}
           <motion.div
             className="absolute inset-0"
-            style={{ background: 'var(--bg-overlay)' }}
+            style={{ background: 'var(--bg-overlay)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)' }}
             onClick={onClose}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -203,13 +148,17 @@ function AddAssetModal({
             className="relative w-full max-w-md mx-4 rounded-xl overflow-hidden"
             style={{
               background: 'var(--bg-surface)',
-              border: '1px solid var(--border-default)',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+              border: '1px solid var(--border-subtle)',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3)',
             }}
-            initial={{ opacity: 0, scale: 0.95, y: 16 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 16 }}
-            transition={{ duration: 0.2 }}
+            {...(reducedMotion
+              ? { initial: false, animate: { opacity: 1 } }
+              : {
+                  initial: { opacity: 0, scale: 0.95, y: 16 },
+                  animate: { opacity: 1, scale: 1, y: 0 },
+                  exit: { opacity: 0, scale: 0.95, y: 16 },
+                })}
+            transition={{ duration: reducedMotion ? 0 : 0.2 }}
           >
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-4"
@@ -233,8 +182,8 @@ function AddAssetModal({
             <div className="px-5 py-4 flex flex-col gap-4">
               {/* Ticker input */}
               <div>
-                <label className="block text-[11px] uppercase tracking-wider font-semibold mb-1.5"
-                  style={{ color: 'var(--text-muted)' }}
+                <label className="block text-[11px] uppercase font-semibold mb-1.5"
+                  style={{ color: 'var(--text-muted)', letterSpacing: '0.05em' }}
                 >
                   Ticker
                 </label>
@@ -259,32 +208,53 @@ function AddAssetModal({
               {/* Suggestion pills */}
               {availableAssets.length > 0 && (
                 <div className="flex flex-wrap gap-2">
-                  {availableAssets.slice(0, 8).map((asset) => (
-                    <button
-                      key={asset}
-                      onClick={() => setTicker(asset)}
-                      className="px-2.5 py-1 rounded-full text-xs font-medium cursor-pointer transition-all duration-150"
-                      style={{
-                        color: ticker === asset ? '#fff' : 'var(--text-secondary)',
-                        background: ticker === asset
-                          ? (ASSET_COLORS[asset] ?? 'var(--accent-primary)')
-                          : 'var(--bg-elevated)',
-                        border: '1px solid',
-                        borderColor: ticker === asset
-                          ? 'transparent'
-                          : 'var(--border-subtle)',
-                      }}
-                    >
-                      {asset}
-                    </button>
-                  ))}
+                  {availableAssets.slice(0, 8).map((asset) => {
+                    const isSelected = ticker === asset
+                    return (
+                      <button
+                        key={asset}
+                        onClick={() => setTicker(asset)}
+                        className={cn(
+                          'px-2.5 py-1 rounded-full text-xs font-medium cursor-pointer',
+                          'transition-all duration-200',
+                        )}
+                        style={{
+                          color: isSelected ? '#fff' : 'var(--text-secondary)',
+                          background: isSelected
+                            ? (ASSET_COLORS[asset] ?? 'var(--accent-primary)')
+                            : 'var(--bg-elevated)',
+                          border: '1px solid',
+                          borderColor: isSelected
+                            ? 'transparent'
+                            : 'var(--border-subtle)',
+                          transform: isSelected ? 'translateY(-1px)' : 'translateY(0)',
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!isSelected) {
+                            e.currentTarget.style.borderColor = 'var(--border-hover)'
+                            e.currentTarget.style.transform = 'translateY(-1px)'
+                            e.currentTarget.style.color = 'var(--text-primary)'
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!isSelected) {
+                            e.currentTarget.style.borderColor = 'var(--border-subtle)'
+                            e.currentTarget.style.transform = 'translateY(0)'
+                            e.currentTarget.style.color = 'var(--text-secondary)'
+                          }
+                        }}
+                      >
+                        {asset}
+                      </button>
+                    )
+                  })}
                 </div>
               )}
 
               {/* Notes textarea */}
               <div>
-                <label className="block text-[11px] uppercase tracking-wider font-semibold mb-1.5"
-                  style={{ color: 'var(--text-muted)' }}
+                <label className="block text-[11px] uppercase font-semibold mb-1.5"
+                  style={{ color: 'var(--text-muted)', letterSpacing: '0.05em' }}
                 >
                   Notes <span style={{ color: 'var(--text-muted)' }}>(optional)</span>
                 </label>
@@ -329,8 +299,8 @@ function AddAssetModal({
                 disabled={isAdding || !ticker}
                 className="px-4 py-2 rounded-lg text-sm font-medium text-white cursor-pointer transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed"
                 style={{ background: 'var(--accent-primary)' }}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                whileHover={reducedMotion ? undefined : { scale: 1.02 }}
+                whileTap={reducedMotion ? undefined : { scale: 0.98 }}
                 onMouseEnter={(e) => {
                   if (!e.currentTarget.disabled)
                     e.currentTarget.style.background = 'var(--accent-hover)'
@@ -390,13 +360,30 @@ function AlertRow({
         )}
       </div>
       <div className="flex items-center gap-2">
+        {/* Toggle switch */}
         <button
           onClick={() => onToggle(alert.id, !alert.enabled)}
-          className="p-1.5 rounded-md cursor-pointer transition-colors duration-150"
-          style={{ color: alert.enabled ? 'var(--accent-primary)' : 'var(--text-muted)' }}
+          className="relative cursor-pointer transition-colors duration-200"
+          style={{
+            width: '40px',
+            height: '22px',
+            borderRadius: '11px',
+            background: alert.enabled ? 'var(--accent-primary)' : 'var(--bg-surface)',
+            border: '1px solid',
+            borderColor: alert.enabled ? 'var(--accent-primary)' : 'var(--border-default)',
+          }}
           title={alert.enabled ? 'Disable alert' : 'Enable alert'}
         >
-          {alert.enabled ? <Bell size={14} weight="fill" /> : <BellSlash size={14} />}
+          <span
+            className="absolute top-[2px] rounded-full transition-all duration-200"
+            style={{
+              width: '16px',
+              height: '16px',
+              left: alert.enabled ? '20px' : '2px',
+              background: '#fff',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+            }}
+          />
         </button>
         <button
           onClick={() => onRemove(alert.id)}
@@ -530,7 +517,7 @@ function AddAlertForm({
 }
 
 // ---------------------------------------------------------------------------
-// Watchlist Row — expandable with alerts
+// Watchlist Row — expandable with alerts (matches holdings-row.tsx pattern)
 // ---------------------------------------------------------------------------
 
 function WatchlistRow({
@@ -543,6 +530,7 @@ function WatchlistRow({
   onToggleAlert,
   onRemoveAlert,
   onAddAlert,
+  reducedMotion,
 }: {
   item: WatchlistItem
   alerts: WatchlistAlert[]
@@ -553,6 +541,7 @@ function WatchlistRow({
   onToggleAlert: (id: string, enabled: boolean) => void
   onRemoveAlert: (id: string) => void
   onAddAlert: (watchlistId: string, type: AlertType, condition: Record<string, unknown>) => Promise<void>
+  reducedMotion: boolean
 }) {
   const [confirmingDelete, setConfirmingDelete] = useState(false)
   const [showAddAlert, setShowAddAlert] = useState(false)
@@ -581,12 +570,18 @@ function WatchlistRow({
     }
   }
 
+  // Sparkline color based on trend (matching portfolio holdings-row)
   const sparklineColor =
     item.sparkline && item.sparkline.length >= 2
       ? item.sparkline[item.sparkline.length - 1] >= item.sparkline[0]
         ? 'var(--data-positive)'
         : 'var(--data-negative)'
       : 'var(--text-muted)'
+
+  // Glow on Pelican when funding is elevated
+  const shouldGlow =
+    (item.funding_rate !== undefined && Math.abs(item.funding_rate) > 0.0001) ||
+    (item.price_change_24h !== undefined && Math.abs(item.price_change_24h) > 5)
 
   const handleDeleteClick = () => {
     if (confirmingDelete) {
@@ -608,40 +603,54 @@ function WatchlistRow({
 
   return (
     <>
-      {/* Main row */}
+      {/* Main row — matches portfolio holdings-row.tsx pattern exactly */}
       <tr
-        className="group cursor-pointer"
+        className="group cursor-pointer border-b last:border-0 transition-colors duration-150"
+        style={{ borderColor: 'var(--border-subtle)' }}
         onClick={onToggleExpand}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.02)'
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = 'transparent'
+        }}
       >
         {/* Expand arrow */}
-        <td className="!py-3 !pl-3 !pr-0 w-8">
+        <td style={{ padding: '14px 8px 14px 16px', width: '32px' }}>
           <motion.div
             animate={{ rotate: isExpanded ? 90 : 0 }}
-            transition={{ duration: 0.15 }}
+            transition={{ duration: reducedMotion ? 0 : 0.15 }}
           >
             <CaretRight size={12} style={{ color: 'var(--text-muted)' }} />
           </motion.div>
         </td>
 
-        {/* Asset */}
-        <td className="!py-3">
+        {/* Asset — same brand color circle + ticker + name + sparkline as portfolio */}
+        <td style={{ padding: '14px 16px' }}>
           <div className="flex items-center gap-3">
             <div
-              className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
+              className="w-[30px] h-[30px] rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
               style={{ backgroundColor: brandColor }}
             >
               {item.asset[0]}
             </div>
             <div className="flex flex-col">
-              <div className="flex items-center">
-                <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+              <div className="flex items-center gap-1">
+                <span
+                  className="text-sm font-semibold"
+                  style={{ color: 'var(--text-primary)' }}
+                >
                   {item.asset}
                 </span>
-                <span className="hidden sm:inline-block">
-                  {item.sparkline && (
-                    <MiniSparkline data={item.sparkline} color={sparklineColor} />
-                  )}
-                </span>
+                {item.sparkline && (
+                  <Sparkline
+                    data={item.sparkline}
+                    color={sparklineColor}
+                    width={64}
+                    height={22}
+                    className="ml-1 opacity-60 hidden sm:inline-block"
+                  />
+                )}
               </div>
               <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
                 {name}
@@ -650,29 +659,42 @@ function WatchlistRow({
           </div>
         </td>
 
-        {/* Price */}
-        <td>
-          <span className="font-mono text-sm" style={{ color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>
+        {/* Price — right-aligned, font-mono tabular-nums */}
+        <td className="text-right" style={{ padding: '14px 16px' }}>
+          <span
+            className="font-mono text-[13px]"
+            style={{ color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}
+          >
             {item.current_price !== undefined ? formatCurrency(item.current_price) : '--'}
           </span>
         </td>
 
-        {/* 24h % */}
-        <td className="hidden md:table-cell">
+        {/* 24h % — right-aligned with CaretUp/CaretDown */}
+        <td className="hidden md:table-cell text-right" style={{ padding: '14px 16px' }}>
           {item.price_change_24h !== undefined ? (
-            <span className="font-mono text-sm inline-flex items-center gap-0.5" style={{ color: change24hColor, fontVariantNumeric: 'tabular-nums' }}>
-              {item.price_change_24h >= 0 ? <CaretUp size={12} weight="fill" /> : <CaretDown size={12} weight="fill" />}
-              {formatPercent(item.price_change_24h)}
+            <span
+              className="font-mono text-[13px] inline-flex items-center justify-end gap-0.5"
+              style={{ color: change24hColor, fontVariantNumeric: 'tabular-nums' }}
+            >
+              {item.price_change_24h >= 0 ? (
+                <CaretUp size={12} weight="fill" />
+              ) : (
+                <CaretDown size={12} weight="fill" />
+              )}
+              {formatPercentWithSign(item.price_change_24h)}
             </span>
           ) : (
             <span style={{ color: 'var(--text-muted)' }}>--</span>
           )}
         </td>
 
-        {/* Funding */}
-        <td className="hidden md:table-cell">
+        {/* Funding — right-aligned */}
+        <td className="hidden md:table-cell text-right" style={{ padding: '14px 16px' }}>
           {item.funding_rate !== undefined ? (
-            <span className="font-mono text-sm" style={{ color: fundingColor, fontVariantNumeric: 'tabular-nums' }}>
+            <span
+              className="font-mono text-xs"
+              style={{ color: fundingColor, fontVariantNumeric: 'tabular-nums' }}
+            >
               {formatFundingRate(item.funding_rate)}
             </span>
           ) : (
@@ -680,31 +702,38 @@ function WatchlistRow({
           )}
         </td>
 
-        {/* Alerts badge */}
-        <td className="hidden sm:table-cell">
+        {/* Alerts badge — small accent circle with count */}
+        <td className="hidden sm:table-cell text-right" style={{ padding: '14px 16px' }}>
           {activeAlerts > 0 ? (
             <span
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium"
+              className="inline-flex items-center justify-center font-mono text-[9px] font-bold text-white flex-shrink-0"
               style={{
-                color: 'var(--accent-primary)',
-                background: 'var(--accent-dim)',
+                width: '16px',
+                height: '16px',
+                borderRadius: '8px',
+                background: 'var(--accent-primary)',
+                fontVariantNumeric: 'tabular-nums',
               }}
             >
-              <Bell size={10} weight="fill" />
-              <span className="font-mono" style={{ fontVariantNumeric: 'tabular-nums' }}>{activeAlerts}</span>
+              {activeAlerts}
             </span>
-          ) : (
-            <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>\u2014</span>
-          )}
+          ) : null}
         </td>
 
-        {/* Actions */}
-        <td className="!py-3" onClick={(e) => e.stopPropagation()}>
-          <div className="flex items-center gap-0.5">
-            <PelicanIcon onClick={onPelicanClick} size={16} />
+        {/* Actions — Pelican + Delete (delete hidden until hover) */}
+        <td
+          className="w-[88px]"
+          style={{ padding: '14px 8px' }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-end gap-0">
+            <PelicanIcon onClick={onPelicanClick} size={16} glow={shouldGlow} />
             <button
               onClick={handleDeleteClick}
-              className="p-2 rounded-md cursor-pointer transition-colors duration-150 text-[11px] font-medium"
+              className={cn(
+                'p-2 rounded-md cursor-pointer transition-all duration-150 text-[11px] font-medium',
+                !confirmingDelete && 'opacity-0 group-hover:opacity-100',
+              )}
               style={{
                 color: confirmingDelete ? 'var(--data-negative)' : 'var(--text-muted)',
               }}
@@ -732,17 +761,16 @@ function WatchlistRow({
           <tr>
             <td colSpan={7} className="!p-0">
               <motion.div
-                initial={{ height: 0, opacity: 0 }}
+                initial={reducedMotion ? false : { height: 0, opacity: 0 }}
                 animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.2 }}
+                exit={reducedMotion ? { opacity: 0 } : { height: 0, opacity: 0 }}
+                transition={{ duration: reducedMotion ? 0 : 0.2 }}
                 className="overflow-hidden"
               >
                 <div
-                  className="px-4 py-3 mx-3 mb-3 rounded-lg"
+                  className="px-4 py-3 mx-4 mb-3 rounded-xl"
                   style={{
-                    background: 'var(--bg-base)',
-                    border: '1px solid var(--border-subtle)',
+                    background: 'var(--bg-elevated)',
                   }}
                 >
                   {/* Notes */}
@@ -754,7 +782,10 @@ function WatchlistRow({
 
                   {/* Alerts header */}
                   <div className="flex items-center justify-between mb-2">
-                    <h4 className="text-[11px] uppercase tracking-wider font-semibold" style={{ color: 'var(--text-muted)' }}>
+                    <h4
+                      className="text-[11px] uppercase font-semibold"
+                      style={{ color: 'var(--text-muted)', letterSpacing: '0.05em' }}
+                    >
                       Alerts
                     </h4>
                     <button
@@ -791,10 +822,10 @@ function WatchlistRow({
                   <AnimatePresence>
                     {showAddAlert && (
                       <motion.div
-                        initial={{ height: 0, opacity: 0 }}
+                        initial={reducedMotion ? false : { height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.15 }}
+                        exit={reducedMotion ? { opacity: 0 } : { height: 0, opacity: 0 }}
+                        transition={{ duration: reducedMotion ? 0 : 0.15 }}
                         className="overflow-hidden"
                       >
                         <AddAlertForm
@@ -816,17 +847,64 @@ function WatchlistRow({
 }
 
 // ---------------------------------------------------------------------------
-// Loading skeleton
+// Loading skeleton — shimmer matching table layout
 // ---------------------------------------------------------------------------
 
 function WatchlistLoadingState() {
   return (
     <div className="max-w-[880px] mx-auto" style={{ padding: 'var(--space-page-x)' }}>
+      {/* Header skeleton */}
       <div className="flex items-center justify-between mb-6">
-        <div className="h-6 w-28 rounded" style={{ background: 'var(--bg-elevated)' }} />
-        <div className="h-9 w-28 rounded-lg" style={{ background: 'var(--bg-elevated)' }} />
+        <div className="h-6 w-28 rounded shimmer" />
+        <div className="h-9 w-28 rounded-lg shimmer" />
       </div>
-      <LoadingSkeleton variant="row" count={5} />
+      {/* Table skeleton */}
+      <div
+        className="rounded-xl border overflow-hidden"
+        style={{
+          background: 'var(--bg-surface)',
+          borderColor: 'var(--border-subtle)',
+          boxShadow: '0 1px 2px rgba(0,0,0,0.3), 0 4px 12px rgba(0,0,0,0.15)',
+        }}
+      >
+        {/* Header row */}
+        <div
+          className="flex items-center gap-4 px-4 py-3"
+          style={{ borderBottom: '1px solid var(--border-subtle)' }}
+        >
+          <div className="h-3 w-8 rounded shimmer" />
+          <div className="h-3 w-16 rounded shimmer" />
+          <div className="h-3 w-12 rounded shimmer ml-auto" />
+          <div className="h-3 w-10 rounded shimmer hidden md:block" />
+          <div className="h-3 w-14 rounded shimmer hidden md:block" />
+          <div className="h-3 w-10 rounded shimmer hidden sm:block" />
+          <div className="h-3 w-8 rounded shimmer" />
+        </div>
+        {/* Row skeletons */}
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div
+            key={i}
+            className="flex items-center gap-4 px-4 py-4"
+            style={{
+              borderBottom: i < 4 ? '1px solid var(--border-subtle)' : undefined,
+            }}
+          >
+            <div className="h-3 w-3 rounded shimmer" />
+            <div className="flex items-center gap-3 flex-1">
+              <div className="w-[30px] h-[30px] rounded-full shimmer flex-shrink-0" />
+              <div className="flex flex-col gap-1.5">
+                <div className="h-3.5 w-12 rounded shimmer" />
+                <div className="h-2.5 w-16 rounded shimmer" />
+              </div>
+            </div>
+            <div className="h-3.5 w-16 rounded shimmer" />
+            <div className="h-3.5 w-14 rounded shimmer hidden md:block" />
+            <div className="h-3.5 w-14 rounded shimmer hidden md:block" />
+            <div className="h-4 w-4 rounded-full shimmer hidden sm:block" />
+            <div className="h-3.5 w-8 rounded shimmer" />
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -851,6 +929,7 @@ function WatchlistPageContent() {
   const { openWithPrompt } = usePelicanPanelContext()
   const [modalOpen, setModalOpen] = useState(false)
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const reducedMotion = useReducedMotion() ?? false
 
   const existingAssets = useMemo(() => items.map((i) => i.asset), [items])
 
@@ -860,7 +939,7 @@ function WatchlistPageContent() {
       ? formatFundingRate(item.funding_rate) + ' per 8h'
       : 'N/A'
     const changeStr = item.price_change_24h !== undefined
-      ? formatPercent(item.price_change_24h)
+      ? formatPercentWithSign(item.price_change_24h)
       : 'N/A'
 
     openWithPrompt('position', {
@@ -893,7 +972,11 @@ This asset is on the user's watchlist (NOT in their portfolio). Provide analysis
   if (items.length === 0) {
     return (
       <div className="max-w-[880px] mx-auto" style={{ padding: 'var(--space-page-x)' }}>
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+        <motion.div
+          initial={reducedMotion ? false : { opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: reducedMotion ? 0 : 0.3 }}
+        >
           <EmptyState
             icon={Binoculars}
             title="Your watchlist is empty"
@@ -910,11 +993,11 @@ This asset is on the user's watchlist (NOT in their portfolio). Provide analysis
                   background: 'var(--bg-surface)',
                   border: '1px solid var(--border-default)',
                 }}
-                whileHover={{
+                whileHover={reducedMotion ? undefined : {
                   scale: 1.03,
                   borderColor: ASSET_COLORS[ticker],
                 }}
-                whileTap={{ scale: 0.97 }}
+                whileTap={reducedMotion ? undefined : { scale: 0.97 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.borderColor = ASSET_COLORS[ticker] ?? 'var(--border-hover)'
                   e.currentTarget.style.color = 'var(--text-primary)'
@@ -944,79 +1027,144 @@ This asset is on the user's watchlist (NOT in their portfolio). Provide analysis
   // --- Watchlist with items ---
   return (
     <div className="max-w-[880px] mx-auto" style={{ padding: 'var(--space-page-x)' }}>
-      <AnimatePresence mode="wait">
-        <motion.div
-          key="watchlist-content"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.25 }}
-        >
-          {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>
-              Watchlist
-            </h1>
-            <motion.button
-              onClick={() => setModalOpen(true)}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-medium cursor-pointer transition-colors duration-150"
-              style={{
-                color: 'var(--accent-primary)',
-                border: '1px solid var(--accent-primary)',
-                background: 'transparent',
-              }}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'var(--accent-dim)'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'transparent'
-              }}
-            >
-              <Plus size={16} weight="bold" />
-              Add Asset
-            </motion.button>
-          </div>
+      <motion.div
+        initial={reducedMotion ? false : { opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: reducedMotion ? 0 : 0.3 }}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>
+            Watchlist
+          </h1>
+          <motion.button
+            onClick={() => setModalOpen(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-medium cursor-pointer transition-colors duration-150"
+            style={{
+              color: 'var(--accent-primary)',
+              border: '1px solid var(--accent-primary)',
+              background: 'transparent',
+            }}
+            whileHover={reducedMotion ? undefined : { scale: 1.02 }}
+            whileTap={reducedMotion ? undefined : { scale: 0.98 }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'var(--accent-dim)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'transparent'
+            }}
+          >
+            <Plus size={16} weight="bold" />
+            Add Asset
+          </motion.button>
+        </div>
 
-          {/* Watchlist Table */}
-          <div className="card !p-0 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th className="w-8" />
-                    <th>Asset</th>
-                    <th>Price</th>
-                    <th className="hidden md:table-cell">24h</th>
-                    <th className="hidden md:table-cell">Funding</th>
-                    <th className="hidden sm:table-cell">Alerts</th>
-                    <th className="w-24" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {items.map((item) => {
-                    const itemAlerts = alerts.filter((a) => a.watchlist_id === item.id)
-                    return (
-                      <WatchlistRow
-                        key={item.id}
-                        item={item}
-                        alerts={itemAlerts}
-                        isExpanded={expandedId === item.id}
-                        onToggleExpand={() => setExpandedId(expandedId === item.id ? null : item.id)}
-                        onPelicanClick={() => openWatchlistPelican(item)}
-                        onRemove={() => removeAsset(item.id)}
-                        onToggleAlert={toggleAlert}
-                        onRemoveAlert={removeAlert}
-                        onAddAlert={addAlert}
-                      />
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
+        {/* Watchlist Table — matches holdings-table.tsx structure */}
+        <div
+          className="rounded-xl border overflow-hidden"
+          style={{
+            background: 'var(--bg-surface)',
+            borderColor: 'var(--border-subtle)',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.3), 0 4px 12px rgba(0,0,0,0.15)',
+          }}
+        >
+          <div className="overflow-x-auto themed-scroll">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                  <th
+                    className="text-left text-[11px] uppercase font-semibold"
+                    style={{
+                      color: 'var(--text-muted)',
+                      letterSpacing: '0.05em',
+                      padding: '12px 8px 12px 16px',
+                      width: '32px',
+                    }}
+                  />
+                  <th
+                    className="text-left text-[11px] uppercase font-semibold"
+                    style={{
+                      color: 'var(--text-muted)',
+                      letterSpacing: '0.05em',
+                      padding: '12px 16px',
+                    }}
+                  >
+                    Asset
+                  </th>
+                  <th
+                    className="text-right text-[11px] uppercase font-semibold"
+                    style={{
+                      color: 'var(--text-muted)',
+                      letterSpacing: '0.05em',
+                      padding: '12px 16px',
+                    }}
+                  >
+                    Price
+                  </th>
+                  <th
+                    className="hidden md:table-cell text-right text-[11px] uppercase font-semibold"
+                    style={{
+                      color: 'var(--text-muted)',
+                      letterSpacing: '0.05em',
+                      padding: '12px 16px',
+                    }}
+                  >
+                    24h
+                  </th>
+                  <th
+                    className="hidden md:table-cell text-right text-[11px] uppercase font-semibold"
+                    style={{
+                      color: 'var(--text-muted)',
+                      letterSpacing: '0.05em',
+                      padding: '12px 16px',
+                    }}
+                  >
+                    Funding
+                  </th>
+                  <th
+                    className="hidden sm:table-cell text-right text-[11px] uppercase font-semibold"
+                    style={{
+                      color: 'var(--text-muted)',
+                      letterSpacing: '0.05em',
+                      padding: '12px 16px',
+                    }}
+                  >
+                    Alerts
+                  </th>
+                  <th
+                    className="w-[88px] text-[11px] uppercase font-semibold"
+                    style={{
+                      color: 'var(--text-muted)',
+                      letterSpacing: '0.05em',
+                      padding: '12px 8px',
+                    }}
+                  />
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((item) => {
+                  const itemAlerts = alerts.filter((a) => a.watchlist_id === item.id)
+                  return (
+                    <WatchlistRow
+                      key={item.id}
+                      item={item}
+                      alerts={itemAlerts}
+                      isExpanded={expandedId === item.id}
+                      onToggleExpand={() => setExpandedId(expandedId === item.id ? null : item.id)}
+                      onPelicanClick={() => openWatchlistPelican(item)}
+                      onRemove={() => removeAsset(item.id)}
+                      onToggleAlert={toggleAlert}
+                      onRemoveAlert={removeAlert}
+                      onAddAlert={addAlert}
+                      reducedMotion={reducedMotion}
+                    />
+                  )
+                })}
+              </tbody>
+            </table>
           </div>
-        </motion.div>
-      </AnimatePresence>
+        </div>
+      </motion.div>
 
       {/* Add Asset Modal */}
       <AddAssetModal
@@ -1025,6 +1173,7 @@ This asset is on the user's watchlist (NOT in their portfolio). Provide analysis
         onAdd={addAsset}
         existingAssets={existingAssets}
         isAdding={isAdding}
+        reducedMotion={reducedMotion}
       />
     </div>
   )

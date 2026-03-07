@@ -1,6 +1,6 @@
 # Crypto Analytix — Issues & Tech Debt Tracker
 
-Last updated: March 7, 2026 (after Polish Session B — Portfolio, Header, Sidebar First Impression)
+Last updated: March 7, 2026 (after Polish Session C — Signals, Brief, Calendar, Watchlist, Education, Onboarding, Settings, Community)
 
 ## Priority Levels
 - **P0 — Fix before next session.** Will cause bugs or security issues if left.
@@ -195,6 +195,17 @@ Last updated: March 7, 2026 (after Polish Session B — Portfolio, Header, Sideb
 | — | Portfolio: stat cards with gradient tint, right-aligned number columns, clickable table rows, proper minus signs, Pelican glow on notable positions, shimmer loading, enhanced empty state with feature preview cards | Mar 7, 2026 | Polish Session B |
 | — | Mobile nav: saturate(1.2) backdrop, tracking-[0.3px] labels | Mar 7, 2026 | Polish Session B |
 | — | globals.css: shimmer keyframe, .shimmer class, .themed-scroll utility, prefers-reduced-motion support | Mar 7, 2026 | Polish Session B |
+| — | Signals page: pill filter tabs, gradient tint cards with type-colored left borders (cyan/purple/green/amber), "In your portfolio" badges, shimmer loading, infinite scroll | Mar 7, 2026 | Polish Session C |
+| — | Signal cards (4): analyst avatar colors, direction pills, confidence bars, key level chips, CT quote blocks, wallet compact rows, macro ForexAnalytix badges | Mar 7, 2026 | Polish Session C |
+| — | Brief page: trading-desk-style sections, market snapshot ticker bar, Key Levels with brand-colored pills, "One Thing to Learn" accent callout, staggered section animations | Mar 7, 2026 | Polish Session C |
+| — | Calendar page: 52px grid cells, 5px event dots, critical pulse badges, expand/collapse descriptions, "In your portfolio" badges, two-panel layout | Mar 7, 2026 | Polish Session C |
+| — | Watchlist page: table matches portfolio styling (right-aligned numbers, brand circles, shared Sparkline), toggle switches (40x22px), alert expandable sections, shimmer loading | Mar 7, 2026 | Polish Session C |
+| — | Onboarding page: premium card hover/selected states, gradient continue button with Rocket icon, slide step transitions, progress dot animations | Mar 7, 2026 | Polish Session C |
+| — | Education page: 5 visually distinct section types (intro/concept/tradfi_bridge/example/key_takeaway), TradFi Bridge accent callout, quiz correct/incorrect states, completion card | Mar 7, 2026 | Polish Session C |
+| — | Settings page decomposed: 1165-line monolith → 333-line orchestrator + 6 sub-components (account, connections, notifications, pelican, privacy, quick-links) | Mar 7, 2026 | Polish Session C |
+| — | Community page: accent gradient CTA, share limit indicator, insight cards matching Portal style | Mar 7, 2026 | Polish Session C |
+| 23 | Select dropdown styling in dark mode (signals asset filter) | Mar 7, 2026 | Polish Session C |
+| — | Review audit: 6 cross-page consistency fixes (heading sizes, toggle dimensions, badge patterns, themed-scroll, section margins) | Mar 7, 2026 | Polish Session C |
 
 ---
 

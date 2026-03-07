@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback, useMemo } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import {
   ArrowLeft,
   Clock,
@@ -23,7 +23,7 @@ import type { EducationModule, EducationSection } from '@/types/education'
 export const dynamic = 'force-dynamic'
 
 // ---------------------------------------------------------------------------
-// Category → SeverityTag mapping
+// Category -> SeverityTag mapping
 // ---------------------------------------------------------------------------
 
 function categoryToSeverity(category: string): SeverityType {
@@ -45,7 +45,7 @@ function LearnLoadingState() {
     <div className="px-[var(--space-page-x)] py-[var(--space-page-y)]">
       <div className="max-w-[760px] mx-auto">
         <LoadingSkeleton variant="text" className="mb-4" />
-        <div className="h-1 rounded-full mb-6" style={{ background: 'var(--bg-elevated)' }} />
+        <div className="h-1 rounded-full mb-6 shimmer" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
             <LoadingSkeleton key={i} variant="card" />
@@ -79,17 +79,39 @@ function ModuleCard({
       onClick={onSelect}
       className={cn(
         'relative rounded-xl p-5 cursor-pointer transition-all duration-200',
-        'border border-[var(--border-default)]',
-        'hover:border-[var(--border-hover)] hover:bg-[var(--bg-elevated)]'
+        'border border-[var(--border-subtle)]',
+        'hover:border-[var(--border-hover)] hover:-translate-y-[1px]'
       )}
-      style={{ background: 'var(--bg-surface)' }}
+      style={{
+        background: 'var(--bg-surface)',
+        boxShadow: '0 1px 2px rgba(0,0,0,0.3), 0 4px 12px rgba(0,0,0,0.15)',
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.4), 0 8px 24px rgba(0,0,0,0.2)'
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.3), 0 4px 12px rgba(0,0,0,0.15)'
+      }}
     >
-      {/* Category */}
-      <SeverityTag type={categoryToSeverity(module.category)} />
+      {/* Top row: Category + Pelican */}
+      <div className="flex items-start justify-between">
+        <SeverityTag type={categoryToSeverity(module.category)} />
+        <div
+          onClick={(e) => {
+            e.stopPropagation()
+            onPelicanClick()
+          }}
+        >
+          <PelicanIcon
+            onClick={onPelicanClick}
+            size={14}
+          />
+        </div>
+      </div>
 
       {/* Title */}
       <h3
-        className="text-base font-semibold mt-3"
+        className="text-[15px] font-semibold mt-3 leading-snug"
         style={{ color: 'var(--text-primary)' }}
       >
         {module.title}
@@ -97,49 +119,56 @@ function ModuleCard({
 
       {/* Description */}
       <p
-        className="text-sm mt-1 line-clamp-2"
-        style={{ color: 'var(--text-secondary)' }}
+        className="text-[13px] mt-1.5 line-clamp-2"
+        style={{ color: 'var(--text-secondary)', lineHeight: '1.6' }}
       >
         {module.description}
       </p>
 
       {/* TradFi analog */}
-      <p
-        className="text-xs italic mt-2"
-        style={{ color: 'var(--text-muted)' }}
-      >
-        <span className="not-italic font-medium">TradFi:</span>{' '}
-        {module.tradfi_analog}
-      </p>
+      <div className="mt-2.5 flex items-baseline gap-1.5">
+        <span
+          className="text-[10px] uppercase font-semibold tracking-wider"
+          style={{ color: 'var(--accent-primary)' }}
+        >
+          TradFi:
+        </span>
+        <span
+          className="text-xs italic"
+          style={{ color: 'var(--text-muted)' }}
+        >
+          {module.tradfi_analog}
+        </span>
+      </div>
 
       {/* Bottom row */}
       <div className="flex items-center justify-between mt-4">
         <div className="flex items-center gap-1.5">
-          <Clock size={14} weight="regular" className="text-[var(--text-muted)]" />
+          <Clock size={12} weight="regular" style={{ color: 'var(--text-muted)' }} />
           <span
-            className="text-xs font-mono"
+            className="text-[11px] font-mono"
             style={{ color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}
           >
-            {module.estimated_minutes}
-          </span>
-          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-            min
+            {module.estimated_minutes} min
           </span>
         </div>
 
         <div className="flex items-center gap-2">
           {isStarted && (
             <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-amber-400" />
-              <span className="text-xs" style={{ color: 'rgb(251 191 36)' }}>
+              <span
+                className="w-2 h-2 rounded-full"
+                style={{ backgroundColor: 'var(--data-warning)' }}
+              />
+              <span className="text-xs" style={{ color: 'var(--data-warning)' }}>
                 In Progress
               </span>
             </div>
           )}
           {isCompleted && (
             <div className="flex items-center gap-1.5">
-              <CheckCircle size={14} weight="fill" className="text-green-400" />
-              <span className="text-xs text-green-400">
+              <CheckCircle size={14} weight="fill" style={{ color: 'var(--data-positive)' }} />
+              <span className="text-xs" style={{ color: 'var(--data-positive)' }}>
                 Completed
                 {progress?.quiz_score != null && (
                   <span className="font-mono ml-1" style={{ fontVariantNumeric: 'tabular-nums' }}>
@@ -150,20 +179,6 @@ function ModuleCard({
             </div>
           )}
         </div>
-      </div>
-
-      {/* Pelican icon */}
-      <div
-        className="absolute bottom-3 right-3"
-        onClick={(e) => {
-          e.stopPropagation()
-          onPelicanClick()
-        }}
-      >
-        <PelicanIcon
-          onClick={onPelicanClick}
-          size={14}
-        />
       </div>
     </div>
   )
@@ -185,14 +200,14 @@ function SectionBlock({
       return (
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <h3 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
+            <h3 className="text-[15px] font-semibold" style={{ color: 'var(--text-primary)' }}>
               {section.heading}
             </h3>
             <PelicanIcon onClick={() => onPelicanClick(section)} size={14} />
           </div>
           <p
-            className="text-[15px] leading-relaxed"
-            style={{ color: 'var(--text-secondary)' }}
+            className="text-[15px]"
+            style={{ color: 'var(--text-primary)', lineHeight: '1.8', fontWeight: 400 }}
           >
             {section.body}
           </p>
@@ -202,18 +217,18 @@ function SectionBlock({
     case 'concept':
       return (
         <div
-          className="pl-5"
-          style={{ borderLeft: '3px solid var(--accent-primary)' }}
+          className="pl-4"
+          style={{ borderLeft: '2px solid var(--border-default)' }}
         >
           <div className="flex items-center gap-2 mb-3">
-            <h3 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
+            <h3 className="text-[15px] font-semibold" style={{ color: 'var(--text-primary)' }}>
               {section.heading}
             </h3>
             <PelicanIcon onClick={() => onPelicanClick(section)} size={14} />
           </div>
           <p
-            className="text-[15px] leading-relaxed"
-            style={{ color: 'var(--text-secondary)' }}
+            className="text-[14px]"
+            style={{ color: 'var(--text-secondary)', lineHeight: '1.8' }}
           >
             {section.body}
           </p>
@@ -223,27 +238,31 @@ function SectionBlock({
     case 'tradfi_bridge':
       return (
         <div
-          className="p-5 rounded-r-xl"
+          className="rounded-xl px-5 py-4"
           style={{
-            background: 'rgba(29,161,196,0.06)',
-            borderLeft: '4px solid var(--accent-primary)',
+            background: 'linear-gradient(135deg, rgba(29,161,196,0.06) 0%, rgba(29,161,196,0.02) 100%)',
+            borderLeft: '3px solid var(--accent-primary)',
           }}
         >
           <span
-            className="text-xs font-semibold uppercase tracking-wider"
-            style={{ color: 'var(--accent-primary)' }}
+            className="inline-flex items-center px-[7px] py-[2px] rounded text-[9px] font-semibold uppercase tracking-wider"
+            style={{
+              color: 'var(--accent-primary)',
+              backgroundColor: 'var(--accent-muted)',
+              border: `1px solid color-mix(in srgb, var(--accent-primary) 20%, transparent)`,
+            }}
           >
             TradFi Bridge
           </span>
           <div className="flex items-center gap-2 mt-3 mb-3">
-            <h3 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
+            <h3 className="text-[15px] font-semibold" style={{ color: 'var(--text-primary)' }}>
               {section.heading}
             </h3>
             <PelicanIcon onClick={() => onPelicanClick(section)} size={14} />
           </div>
           <p
-            className="text-sm leading-relaxed"
-            style={{ color: 'var(--text-primary)' }}
+            className="text-sm"
+            style={{ color: 'var(--text-primary)', lineHeight: '1.8' }}
           >
             {section.body}
           </p>
@@ -253,24 +272,24 @@ function SectionBlock({
     case 'example':
       return (
         <div
-          className="p-5 rounded-xl"
+          className="rounded-xl px-5 py-4"
           style={{ background: 'var(--bg-elevated)' }}
         >
           <span
-            className="text-xs font-semibold uppercase tracking-wider"
+            className="text-[10px] font-semibold uppercase tracking-wider"
             style={{ color: 'var(--text-muted)' }}
           >
             Real Example
           </span>
           <div className="flex items-center gap-2 mt-3 mb-3">
-            <h3 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
+            <h3 className="text-[15px] font-semibold" style={{ color: 'var(--text-primary)' }}>
               {section.heading}
             </h3>
             <PelicanIcon onClick={() => onPelicanClick(section)} size={14} />
           </div>
           <p
-            className="text-sm leading-relaxed font-mono"
-            style={{ color: 'var(--text-secondary)' }}
+            className="text-sm font-mono leading-relaxed"
+            style={{ color: 'var(--text-secondary)', fontVariantNumeric: 'tabular-nums' }}
           >
             {section.body}
           </p>
@@ -279,19 +298,27 @@ function SectionBlock({
 
     case 'key_takeaway':
       return (
-        <div
-          className="pb-4"
-          style={{ borderBottom: '2px solid rgba(29,161,196,0.3)' }}
-        >
+        <div>
           <div className="flex items-center gap-2 mb-3">
-            <h3 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
+            <h3 className="text-[15px] font-semibold" style={{ color: 'var(--text-primary)' }}>
               {section.heading}
             </h3>
             <PelicanIcon onClick={() => onPelicanClick(section)} size={14} />
           </div>
+          {/* Subtle accent underline below heading */}
+          <div
+            className="mb-4"
+            style={{
+              width: 40,
+              height: 2,
+              background: 'var(--accent-primary)',
+              borderRadius: 1,
+              opacity: 0.6,
+            }}
+          />
           <p
-            className="text-base font-medium leading-relaxed"
-            style={{ color: 'var(--text-primary)' }}
+            className="text-[15px] font-medium"
+            style={{ color: 'var(--text-primary)', lineHeight: '1.8' }}
           >
             {section.body}
           </p>
@@ -316,6 +343,7 @@ function QuizSection({
 }) {
   const [answers, setAnswers] = useState<Record<number, number>>({})
   const [submitted, setSubmitted] = useState<Record<number, boolean>>({})
+  const prefersReducedMotion = useReducedMotion()
 
   const handleSelect = useCallback(
     (qIndex: number, optIndex: number) => {
@@ -326,13 +354,11 @@ function QuizSection({
       setAnswers(newAnswers)
       setSubmitted(newSubmitted)
 
-      // Check if all questions are answered
       if (Object.keys(newSubmitted).length === questions.length) {
         const correct = questions.reduce((count, q, i) => {
           return count + (newAnswers[i] === q.correct ? 1 : 0)
         }, 0)
         const score = Math.round((correct / questions.length) * 100)
-        // Small delay to let the user see the last answer
         setTimeout(() => onAllAnswered(score), 800)
       }
     },
@@ -361,7 +387,7 @@ function QuizSection({
           return (
             <div key={qIndex}>
               <p
-                className="text-[15px] font-medium mb-4"
+                className="text-[15px] font-semibold mb-3"
                 style={{ color: 'var(--text-primary)' }}
               >
                 {q.question}
@@ -381,46 +407,45 @@ function QuizSection({
                       onClick={() => handleSelect(qIndex, optIndex)}
                       disabled={isAnswered}
                       className={cn(
-                        'relative flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all duration-200',
+                        'relative flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all duration-200',
                         'border',
-                        !isAnswered && 'cursor-pointer hover:border-[var(--border-hover)] hover:bg-[var(--bg-elevated)]',
+                        !isAnswered && 'cursor-pointer hover:border-[var(--border-hover)] hover:-translate-y-[0.5px]',
                         isAnswered && 'cursor-default',
-                        // Default state
                         !isAnswered && !isSelected && 'border-[var(--border-default)]',
-                        // Selected but not submitted
                         !isAnswered && isSelected && 'border-[var(--accent-primary)]',
-                        // Correct
-                        showAsCorrect && 'border-green-500',
-                        // Incorrect
-                        showAsIncorrect && 'border-red-500',
                       )}
                       style={{
                         background: showAsCorrect
-                          ? 'rgba(34, 197, 94, 0.1)'
+                          ? 'rgba(34, 197, 94, 0.06)'
                           : showAsIncorrect
-                            ? 'rgba(239, 68, 68, 0.1)'
+                            ? 'rgba(239, 68, 68, 0.06)'
                             : !isAnswered && isSelected
                               ? 'var(--accent-dim)'
                               : 'var(--bg-surface)',
+                        borderColor: showAsCorrect
+                          ? 'var(--data-positive)'
+                          : showAsIncorrect
+                            ? 'var(--data-negative)'
+                            : undefined,
                       }}
                     >
                       <span
                         className="text-sm flex-1"
                         style={{
                           color: showAsCorrect
-                            ? 'rgb(74 222 128)'
+                            ? 'var(--data-positive)'
                             : showAsIncorrect
-                              ? 'rgb(248 113 113)'
+                              ? 'var(--data-negative)'
                               : 'var(--text-secondary)',
                         }}
                       >
                         {opt}
                       </span>
                       {showAsCorrect && (
-                        <Check size={16} weight="bold" className="text-green-400 flex-shrink-0" />
+                        <Check size={16} weight="bold" style={{ color: 'var(--data-positive)', flexShrink: 0 }} />
                       )}
                       {showAsIncorrect && (
-                        <XIcon size={16} weight="bold" className="text-red-400 flex-shrink-0" />
+                        <XIcon size={16} weight="bold" style={{ color: 'var(--data-negative)', flexShrink: 0 }} />
                       )}
                     </button>
                   )
@@ -431,11 +456,11 @@ function QuizSection({
               <AnimatePresence>
                 {isAnswered && (
                   <motion.p
-                    initial={{ opacity: 0, height: 0 }}
+                    initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
+                    exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, height: 0 }}
                     transition={{ duration: 0.2 }}
-                    className="text-sm italic mt-3"
+                    className="text-[13px] italic mt-3"
                     style={{ color: 'var(--text-secondary)' }}
                   >
                     {q.explanation}
@@ -467,64 +492,81 @@ function CompletionCard({
   onBack: () => void
   onPelicanClick: () => void
 }) {
+  const prefersReducedMotion = useReducedMotion()
   const scoreColor =
     score === 100
       ? 'var(--accent-primary)'
       : score >= 50
-        ? 'rgb(74 222 128)'
-        : 'rgb(251 191 36)'
+        ? 'var(--data-positive)'
+        : 'var(--data-warning)'
+
+  const motionProps = prefersReducedMotion
+    ? {}
+    : {
+        initial: { opacity: 0, scale: 0.9 } as const,
+        animate: { opacity: 1, scale: 1 } as const,
+        transition: { duration: 0.35, ease: 'easeOut' as const },
+      }
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.35, ease: 'easeOut' }}
+      {...motionProps}
       className="flex flex-col items-center py-12"
     >
-      <CheckCircle size={48} weight="fill" className="text-green-400" />
-
-      <h3
-        className="text-lg font-semibold mt-4"
-        style={{ color: 'var(--text-primary)' }}
+      {/* Card with accent gradient tint */}
+      <div
+        className="w-full max-w-sm rounded-xl p-8 flex flex-col items-center"
+        style={{
+          background: 'linear-gradient(135deg, rgba(29,161,196,0.04) 0%, var(--bg-surface) 60%)',
+          border: '1px solid var(--border-subtle)',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.2), 0 1px 2px rgba(0,0,0,0.3)',
+        }}
       >
-        Module Complete!
-      </h3>
+        <CheckCircle size={48} weight="fill" style={{ color: 'var(--data-positive)' }} />
 
-      <p
-        className="text-3xl font-mono font-bold mt-3"
-        style={{ color: scoreColor, fontVariantNumeric: 'tabular-nums' }}
-      >
-        {score}%
-      </p>
+        <h3
+          className="text-lg font-semibold mt-4"
+          style={{ color: 'var(--text-primary)' }}
+        >
+          Module Complete
+        </h3>
 
-      <div className="flex items-center gap-2 mt-3">
-        <PelicanIcon onClick={onPelicanClick} size={14} />
-        <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-          Ask Pelican to explain what you got wrong
-        </span>
-      </div>
+        <p
+          className="text-[28px] font-mono font-bold mt-3"
+          style={{ color: scoreColor, fontVariantNumeric: 'tabular-nums' }}
+        >
+          {score}%
+        </p>
 
-      {recommendedNextTitle && onNextModule && (
+        <div className="flex items-center gap-2 mt-3">
+          <PelicanIcon onClick={onPelicanClick} size={14} />
+          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+            Ask Pelican to explain what you got wrong
+          </span>
+        </div>
+
+        {recommendedNextTitle && onNextModule && (
+          <button
+            type="button"
+            onClick={onNextModule}
+            className="mt-6 px-6 py-3 rounded-xl text-sm font-medium text-white cursor-pointer transition-all duration-200 hover:opacity-90"
+            style={{ background: 'var(--accent-gradient)' }}
+          >
+            Next: {recommendedNextTitle}
+          </button>
+        )}
+
         <button
           type="button"
-          onClick={onNextModule}
-          className="mt-6 px-6 py-3 rounded-xl text-sm font-medium text-white cursor-pointer transition-all duration-200 hover:opacity-90"
-          style={{ background: 'var(--accent-gradient)' }}
+          onClick={onBack}
+          className="mt-3 text-sm cursor-pointer transition-colors duration-150"
+          style={{ color: 'var(--text-muted)' }}
+          onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text-primary)')}
+          onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
         >
-          Next: {recommendedNextTitle}
+          Back to All Modules
         </button>
-      )}
-
-      <button
-        type="button"
-        onClick={onBack}
-        className="mt-3 text-sm cursor-pointer transition-colors duration-150"
-        style={{ color: 'var(--text-muted)' }}
-        onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text-primary)')}
-        onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
-      >
-        Back to All Modules
-      </button>
+      </div>
     </motion.div>
   )
 }
@@ -551,6 +593,7 @@ function ModuleDetail({
   onComplete: (slug: string, quizScore?: number) => Promise<void>
 }) {
   const { openWithPrompt } = usePelicanPanelContext()
+  const prefersReducedMotion = useReducedMotion()
   const [completionScore, setCompletionScore] = useState<number | null>(null)
 
   const isCompleted = progress?.completed || completionScore !== null
@@ -599,13 +642,17 @@ The user just completed this quiz. Help them understand the concepts they may ha
     }
   }, [recommendedNext, onLoadModule])
 
+  const detailMotion = prefersReducedMotion
+    ? {}
+    : {
+        initial: { opacity: 0, x: 20 } as const,
+        animate: { opacity: 1, x: 0 } as const,
+        exit: { opacity: 0, x: -20 } as const,
+        transition: { duration: 0.25 } as const,
+      }
+
   return (
-    <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -20 }}
-      transition={{ duration: 0.25 }}
-    >
+    <motion.div {...detailMotion}>
       {/* Back button */}
       <button
         type="button"
@@ -616,7 +663,7 @@ The user just completed this quiz. Help them understand the concepts they may ha
         onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
       >
         <ArrowLeft size={16} weight="bold" />
-        <span className="text-sm font-medium">All Modules</span>
+        <span className="text-[13px] font-medium">Back to modules</span>
       </button>
 
       {/* Title */}
@@ -631,7 +678,7 @@ The user just completed this quiz. Help them understand the concepts they may ha
       <div className="flex items-center gap-3 mt-3">
         <SeverityTag type={categoryToSeverity(module.category)} />
         <div className="flex items-center gap-1.5">
-          <Clock size={14} weight="regular" className="text-[var(--text-muted)]" />
+          <Clock size={14} weight="regular" style={{ color: 'var(--text-muted)' }} />
           <span
             className="text-sm font-mono"
             style={{ color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}
@@ -641,22 +688,25 @@ The user just completed this quiz. Help them understand the concepts they may ha
         </div>
         {progress?.completed && (
           <div className="flex items-center gap-1.5">
-            <CheckCircle size={14} weight="fill" className="text-green-400" />
-            <span className="text-xs text-green-400">Completed</span>
+            <CheckCircle size={14} weight="fill" style={{ color: 'var(--data-positive)' }} />
+            <span className="text-xs" style={{ color: 'var(--data-positive)' }}>Completed</span>
           </div>
         )}
         {progress?.started_at && !progress.completed && (
           <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-amber-400" />
-            <span className="text-xs" style={{ color: 'rgb(251 191 36)' }}>
+            <span
+              className="w-2 h-2 rounded-full"
+              style={{ backgroundColor: 'var(--data-warning)' }}
+            />
+            <span className="text-xs" style={{ color: 'var(--data-warning)' }}>
               In Progress
             </span>
           </div>
         )}
       </div>
 
-      {/* Content area */}
-      <div className="max-w-[680px] mx-auto mt-10 space-y-8">
+      {/* Content area — comfortable reading width */}
+      <div className="max-w-[640px] mx-auto mt-10 space-y-8">
         {module.content.sections.map((section, i) => (
           <SectionBlock
             key={i}
@@ -703,6 +753,7 @@ function ModuleList({
   onSelectModule: (slug: string) => void
 }) {
   const { openWithPrompt } = usePelicanPanelContext()
+  const prefersReducedMotion = useReducedMotion()
 
   const progressPct = overview.totalCount > 0
     ? (overview.completedCount / overview.totalCount) * 100
@@ -740,6 +791,20 @@ Give the user a quick preview of what they'll learn in this module. Use TradFi a
 
       {/* Progress bar */}
       <div className="mt-4">
+        <div className="flex items-center justify-between mb-2">
+          <p
+            className="text-sm"
+            style={{ color: 'var(--text-muted)' }}
+          >
+            Your progress
+          </p>
+          <span
+            className="text-[12px] font-mono"
+            style={{ color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}
+          >
+            {overview.completedCount} of {overview.totalCount} completed
+          </span>
+        </div>
         <div
           className="h-1 rounded-full overflow-hidden"
           style={{ background: 'var(--bg-elevated)' }}
@@ -747,29 +812,16 @@ Give the user a quick preview of what they'll learn in this module. Use TradFi a
           <motion.div
             className="h-full rounded-full"
             style={{ background: 'var(--accent-primary)' }}
-            initial={{ width: 0 }}
+            initial={prefersReducedMotion ? { width: `${progressPct}%` } : { width: 0 }}
             animate={{ width: `${progressPct}%` }}
             transition={{ duration: 0.6, ease: 'easeOut' }}
           />
         </div>
-        <p
-          className="text-sm mt-2"
-          style={{ color: 'var(--text-muted)' }}
-        >
-          <span className="font-mono" style={{ fontVariantNumeric: 'tabular-nums' }}>
-            {overview.completedCount}
-          </span>
-          {' '}of{' '}
-          <span className="font-mono" style={{ fontVariantNumeric: 'tabular-nums' }}>
-            {overview.totalCount}
-          </span>
-          {' '}completed
-        </p>
       </div>
 
       {/* Recommended next */}
       {recommendedModule && (
-        <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>
+        <p className="text-sm mt-3" style={{ color: 'var(--text-muted)' }}>
           Pelican recommends:{' '}
           <button
             type="button"
@@ -789,9 +841,9 @@ Give the user a quick preview of what they'll learn in this module. Use TradFi a
         {overview.modules.map((mod, index) => (
           <motion.div
             key={mod.slug}
-            initial={{ opacity: 0, y: 12 }}
+            initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25, delay: Math.min(index * 0.05, 0.3) }}
+            transition={{ duration: 0.25, delay: prefersReducedMotion ? 0 : Math.min(index * 0.05, 0.3) }}
           >
             <ModuleCard
               module={mod}
@@ -824,6 +876,7 @@ export default function LearnPage() {
     completeModule,
     recommendedNext,
   } = useEducation()
+  const prefersReducedMotion = useReducedMotion()
 
   const handleSelectModule = useCallback(
     async (slug: string) => {
@@ -832,6 +885,14 @@ export default function LearnPage() {
     },
     [loadModule, startModule]
   )
+
+  const pageMotion = prefersReducedMotion
+    ? {}
+    : {
+        initial: { opacity: 0, y: 8 } as const,
+        animate: { opacity: 1, y: 0 } as const,
+        transition: { duration: 0.3 } as const,
+      }
 
   // Loading
   if (isLoading && !overview) {
@@ -869,16 +930,19 @@ export default function LearnPage() {
   }
 
   return (
-    <div className="px-[var(--space-page-x)] py-[var(--space-page-y)]">
+    <motion.div
+      className="px-[var(--space-page-x)] py-[var(--space-page-y)]"
+      {...pageMotion}
+    >
       <div className="max-w-[760px] mx-auto">
         <AnimatePresence mode="wait">
           {/* Loading module detail */}
           {isLoadingModule && (
             <motion.div
               key="loading-module"
-              initial={{ opacity: 0 }}
+              initial={prefersReducedMotion ? undefined : { opacity: 0 }}
               animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              exit={prefersReducedMotion ? undefined : { opacity: 0 }}
             >
               <LearnLoadingState />
             </motion.div>
@@ -902,9 +966,9 @@ export default function LearnPage() {
           {!isLoadingModule && !activeModule && (
             <motion.div
               key="list"
-              initial={{ opacity: 0 }}
+              initial={prefersReducedMotion ? undefined : { opacity: 0 }}
               animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              exit={prefersReducedMotion ? undefined : { opacity: 0 }}
               transition={{ duration: 0.2 }}
             >
               <ModuleList
@@ -915,6 +979,6 @@ export default function LearnPage() {
           )}
         </AnimatePresence>
       </div>
-    </div>
+    </motion.div>
   )
 }

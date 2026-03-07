@@ -1,13 +1,13 @@
 'use client'
 
-import { Suspense, useMemo, useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { Suspense, useMemo, useCallback, useState } from 'react'
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import {
   CaretLeft,
   CaretRight,
   CalendarBlank,
   ArrowSquareOut,
-  Lightning,
+  CaretDown,
 } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 import { useCalendar, type CalendarEventEnriched } from '@/hooks/use-calendar'
@@ -15,6 +15,7 @@ import { usePelicanPanelContext } from '@/providers/pelican-panel-provider'
 import { PelicanIcon } from '@/components/shared/pelican-icon'
 import { EmptyState } from '@/components/shared/empty-state'
 import { LoadingSkeleton } from '@/components/shared/loading-skeleton'
+import { ASSET_COLORS } from '@/lib/constants'
 import type { CalendarEventType, EventImpact } from '@/types/calendar'
 
 // ---------------------------------------------------------------------------
@@ -30,8 +31,8 @@ const EVENT_TYPE_COLORS: Record<CalendarEventType, string> = {
   earnings: '#22c55e',
   expiration: '#EF4444',
   halving: '#F7931A',
-  upgrade: 'var(--accent-primary)',
-  other: 'var(--text-muted)',
+  upgrade: '#1DA1C4',
+  other: '#5a5a6e',
 }
 
 const EVENT_TYPE_LABELS: Record<CalendarEventType, string> = {
@@ -45,22 +46,26 @@ const EVENT_TYPE_LABELS: Record<CalendarEventType, string> = {
   other: 'EVENT',
 }
 
-const IMPACT_CONFIG: Record<EventImpact, { label: string; className: string }> = {
+const IMPACT_CONFIG: Record<EventImpact, { label: string; color: string; bg: string }> = {
   low: {
-    label: 'Low',
-    className: 'bg-[rgba(107,114,128,0.15)] text-[var(--text-muted)]',
+    label: 'LOW',
+    color: 'var(--text-muted)',
+    bg: 'rgba(107,114,128,0.15)',
   },
   medium: {
-    label: 'Medium',
-    className: 'bg-[rgba(245,158,11,0.15)] text-[#F59E0B]',
+    label: 'MEDIUM',
+    color: '#F59E0B',
+    bg: 'rgba(245,158,11,0.15)',
   },
   high: {
-    label: 'High',
-    className: 'bg-[rgba(249,115,22,0.15)] text-[#F97316]',
+    label: 'HIGH',
+    color: '#F97316',
+    bg: 'rgba(249,115,22,0.15)',
   },
   critical: {
-    label: 'Critical',
-    className: 'bg-[rgba(239,68,68,0.15)] text-[#EF4444] animate-pulse',
+    label: 'CRITICAL',
+    color: '#EF4444',
+    bg: 'rgba(239,68,68,0.15)',
   },
 }
 
@@ -129,7 +134,7 @@ function getToday(): string {
 }
 
 interface CalendarDay {
-  date: string // YYYY-MM-DD
+  date: string
   day: number
   isCurrentMonth: boolean
   isToday: boolean
@@ -139,17 +144,11 @@ function buildCalendarGrid(monthStr: string): CalendarDay[] {
   const { year, month } = parseMonth(monthStr)
   const today = getToday()
 
-  // First day of the month (0=Sun, 1=Mon, ...)
   const firstDate = new Date(year, month - 1, 1)
   const firstDayOfWeek = firstDate.getDay()
-
-  // Convert to Mon-start: Mon=0, Tue=1, ..., Sun=6
   const startOffset = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1
 
-  // Days in month
   const daysInMonth = new Date(year, month, 0).getDate()
-
-  // Build grid
   const days: CalendarDay[] = []
 
   // Previous month fill
@@ -168,7 +167,7 @@ function buildCalendarGrid(monthStr: string): CalendarDay[] {
     days.push({ date: dateStr, day: d, isCurrentMonth: true, isToday: dateStr === today })
   }
 
-  // Fill remaining cells to complete grid (always 6 rows = 42 cells)
+  // Fill to complete grid (always 42 cells = 6 rows)
   const remaining = 42 - days.length
   for (let d = 1; d <= remaining; d++) {
     const nm = month === 12 ? 1 : month + 1
@@ -186,17 +185,194 @@ function buildCalendarGrid(monthStr: string): CalendarDay[] {
 
 function CalendarLoadingState() {
   return (
-    <div className="px-[var(--space-page-x)] py-[var(--space-page-y)]">
+    <div style={{ padding: 'var(--space-page-x)' }}>
       <div className="max-w-[1100px] mx-auto">
-        <div className="flex flex-col lg:flex-row gap-6">
+        {/* Header shimmer */}
+        <div className="mb-6">
+          <div className="shimmer rounded h-6 w-[120px] mb-2" />
+          <div className="shimmer rounded h-4 w-[300px]" />
+        </div>
+        <div className="flex flex-col lg:flex-row gap-5">
           <div className="flex-[55] min-w-0">
-            <LoadingSkeleton variant="card" count={3} />
+            <div className="shimmer rounded-xl h-[420px] w-full" />
           </div>
           <div className="flex-[45] min-w-0">
             <LoadingSkeleton variant="card" count={3} />
           </div>
         </div>
       </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Event card component
+// ---------------------------------------------------------------------------
+
+interface EventCardProps {
+  event: CalendarEventEnriched
+  onPelicanClick: () => void
+}
+
+function EventCard({ event, onPelicanClick }: EventCardProps) {
+  const [expanded, setExpanded] = useState(false)
+  const typeColor = EVENT_TYPE_COLORS[event.event_type]
+  const typeLabel = EVENT_TYPE_LABELS[event.event_type]
+  const impactCfg = IMPACT_CONFIG[event.impact]
+  const isCritical = event.impact === 'critical'
+  const isHighImpact = event.impact === 'high' || isCritical
+  const assetColor = event.asset ? (ASSET_COLORS[event.asset] ?? typeColor) : typeColor
+
+  const descriptionLong = event.description && event.description.length > 120
+
+  return (
+    <div
+      className="relative rounded-xl transition-all duration-200"
+      style={{
+        backgroundColor: 'var(--bg-surface)',
+        border: '1px solid var(--border-subtle)',
+        boxShadow: '0 1px 2px rgba(0,0,0,0.3), 0 4px 12px rgba(0,0,0,0.15)',
+        padding: '14px 16px',
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.borderColor = 'var(--border-hover)'
+        e.currentTarget.style.boxShadow =
+          '0 2px 4px rgba(0,0,0,0.4), 0 8px 24px rgba(0,0,0,0.2)'
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.borderColor = 'var(--border-subtle)'
+        e.currentTarget.style.boxShadow =
+          '0 1px 2px rgba(0,0,0,0.3), 0 4px 12px rgba(0,0,0,0.15)'
+      }}
+    >
+      {/* Pelican icon top-right */}
+      <div className="absolute top-2.5 right-2.5">
+        <PelicanIcon onClick={onPelicanClick} size={16} glow={isHighImpact} />
+      </div>
+
+      {/* Event type pill + impact badge */}
+      <div className="flex items-center gap-2 mb-2 pr-14">
+        <span
+          className="inline-block px-2 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wider"
+          style={{
+            backgroundColor: `color-mix(in srgb, ${typeColor} 15%, transparent)`,
+            color: typeColor,
+            border: `1px solid color-mix(in srgb, ${typeColor} 25%, transparent)`,
+          }}
+        >
+          {typeLabel}
+        </span>
+        <span
+          className={cn(
+            'inline-block px-2 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wider',
+            isCritical && 'animate-pulse'
+          )}
+          style={{
+            backgroundColor: impactCfg.bg,
+            color: impactCfg.color,
+          }}
+        >
+          {impactCfg.label}
+        </span>
+      </div>
+
+      {/* Title */}
+      <h3
+        className="text-[14px] font-semibold leading-tight mb-1.5 pr-12"
+        style={{ color: 'var(--text-primary)' }}
+      >
+        {event.title}
+      </h3>
+
+      {/* Date */}
+      <p
+        className="text-[11px] font-mono tabular-nums mb-2.5"
+        style={{ color: 'var(--text-muted)' }}
+      >
+        {formatEventDate(event.event_date)} at {formatEventTime(event.event_date)}
+      </p>
+
+      {/* Asset pill + portfolio badge */}
+      {event.asset && (
+        <div className="flex items-center gap-2 mb-2.5">
+          <span
+            className="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold font-mono text-white"
+            style={{ backgroundColor: assetColor }}
+          >
+            {event.asset}
+          </span>
+          {event.user_holds && (
+            <span
+              className="inline-flex items-center px-2 py-[2px] rounded-full text-[10px] font-medium"
+              style={{
+                color: 'var(--accent-primary)',
+                backgroundColor: 'var(--accent-dim)',
+              }}
+            >
+              In your portfolio
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Description — max 3 lines with expand */}
+      {event.description && (
+        <div className="mb-2">
+          <p
+            className={cn(
+              'text-[12px] leading-[1.6]',
+              !expanded && descriptionLong && 'line-clamp-3'
+            )}
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            {event.description}
+          </p>
+          {descriptionLong && (
+            <button
+              type="button"
+              onClick={() => setExpanded(!expanded)}
+              className="inline-flex items-center gap-0.5 mt-1 text-[11px] font-medium cursor-pointer transition-colors duration-150"
+              style={{ color: 'var(--accent-primary)' }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = 'var(--accent-hover)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = 'var(--accent-primary)'
+              }}
+            >
+              {expanded ? 'Show less' : 'Read more'}
+              <CaretDown
+                size={10}
+                weight="bold"
+                style={{
+                  transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                  transition: 'transform 150ms ease',
+                }}
+              />
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Source link */}
+      {event.source_url && event.source && (
+        <a
+          href={event.source_url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 text-[11px] transition-colors duration-150"
+          style={{ color: 'var(--accent-primary)' }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = 'var(--accent-hover)'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = 'var(--accent-primary)'
+          }}
+        >
+          {event.source}
+          <ArrowSquareOut size={11} weight="regular" />
+        </a>
+      )}
     </div>
   )
 }
@@ -226,6 +402,7 @@ function CalendarPageContent() {
   } = useCalendar()
 
   const { openWithPrompt } = usePelicanPanelContext()
+  const reducedMotion = useReducedMotion()
 
   // Build event map for dots on calendar
   const eventsByDate = useMemo(() => {
@@ -262,7 +439,7 @@ ASSET: ${event.asset || 'Market-wide'}
 IMPACT: ${event.impact}
 DESCRIPTION: ${event.description || 'No description available'}
 USER HOLDS ASSET: ${event.user_holds ? 'Yes' : 'No'}
-${event.pelican_context || 'Analyze this event. What historically happens around events like this? How should the user prepare? What derivatives positioning should they watch?'}`,
+${event.pelican_context || 'Analyze this event. What historically happens around events like this? How should the user prepare? What derivatives positioning should they watch? Use TradFi analogies for crypto concepts.'}`,
       }
       openWithPrompt(
         event.asset ? 'position' : 'news',
@@ -273,22 +450,40 @@ ${event.pelican_context || 'Analyze this event. What historically happens around
     [openWithPrompt]
   )
 
+  // Animation variants
+  const fadeUp = reducedMotion
+    ? { initial: { opacity: 1 }, animate: { opacity: 1 } }
+    : { initial: { opacity: 0, y: 8 }, animate: { opacity: 1, y: 0 } }
+
   return (
-    <div className="px-[var(--space-page-x)] py-[var(--space-page-y)]">
+    <motion.div
+      style={{ padding: 'var(--space-page-x)' }}
+      initial={fadeUp.initial}
+      animate={fadeUp.animate}
+      transition={{ duration: 0.3 }}
+    >
       <div className="max-w-[1100px] mx-auto">
         {/* Page header */}
-        <div className="flex items-center gap-3 mb-6">
-          <h1 className="text-[20px] font-semibold text-[var(--text-primary)]">Calendar</h1>
-          <span className="text-[12px] text-[var(--text-muted)]">
+        <div className="mb-6">
+          <h1
+            className="text-xl font-semibold"
+            style={{ color: 'var(--text-primary)' }}
+          >
+            Calendar
+          </h1>
+          <p
+            className="text-[13px] mt-0.5"
+            style={{ color: 'var(--text-secondary)' }}
+          >
             Token unlocks, governance, Fed meetings, expirations
-          </span>
+          </p>
         </div>
 
         {/* Loading */}
         {isLoading && events.length === 0 && (
-          <div className="flex flex-col lg:flex-row gap-6">
+          <div className="flex flex-col lg:flex-row gap-5">
             <div className="flex-[55] min-w-0">
-              <LoadingSkeleton variant="card" count={3} />
+              <div className="shimmer rounded-xl h-[420px] w-full" />
             </div>
             <div className="flex-[45] min-w-0">
               <LoadingSkeleton variant="card" count={3} />
@@ -298,27 +493,40 @@ ${event.pelican_context || 'Analyze this event. What historically happens around
 
         {/* Two-panel layout */}
         {!(isLoading && events.length === 0) && (
-          <div className="flex flex-col lg:flex-row gap-6">
-            {/* Left panel: Calendar grid (55%) */}
+          <div className="flex flex-col lg:flex-row" style={{ gap: '20px' }}>
+            {/* ---- Left panel: Calendar grid (55%) ---- */}
             <div className="flex-[55] min-w-0">
-              <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] overflow-hidden">
+              <div
+                className="rounded-xl overflow-hidden"
+                style={{
+                  backgroundColor: 'var(--bg-surface)',
+                  border: '1px solid var(--border-subtle)',
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.3), 0 4px 12px rgba(0,0,0,0.15)',
+                }}
+              >
                 {/* Month navigation header */}
-                <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-subtle)]">
+                <div
+                  className="flex items-center justify-between px-4 py-3"
+                  style={{ borderBottom: '1px solid var(--border-subtle)' }}
+                >
                   <motion.button
                     type="button"
                     onClick={() => setMonth(prevMonth(currentMonth))}
                     className="flex items-center justify-center w-8 h-8 rounded-lg
                       cursor-pointer transition-colors duration-150
-                      text-[var(--text-secondary)] hover:text-[var(--text-primary)]
-                      hover:bg-[rgba(255,255,255,0.05)]"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+                      text-[var(--text-muted)] hover:text-[var(--accent-primary)]
+                      hover:bg-[var(--accent-dim)]"
+                    whileHover={reducedMotion ? undefined : { scale: 1.05 }}
+                    whileTap={reducedMotion ? undefined : { scale: 0.95 }}
                     aria-label="Previous month"
                   >
                     <CaretLeft size={18} weight="bold" />
                   </motion.button>
 
-                  <span className="text-[15px] font-semibold text-[var(--text-primary)]">
+                  <span
+                    className="text-[16px] font-semibold"
+                    style={{ color: 'var(--text-primary)' }}
+                  >
                     {formatMonthLabel(currentMonth)}
                   </span>
 
@@ -327,10 +535,10 @@ ${event.pelican_context || 'Analyze this event. What historically happens around
                     onClick={() => setMonth(nextMonth(currentMonth))}
                     className="flex items-center justify-center w-8 h-8 rounded-lg
                       cursor-pointer transition-colors duration-150
-                      text-[var(--text-secondary)] hover:text-[var(--text-primary)]
-                      hover:bg-[rgba(255,255,255,0.05)]"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+                      text-[var(--text-muted)] hover:text-[var(--accent-primary)]
+                      hover:bg-[var(--accent-dim)]"
+                    whileHover={reducedMotion ? undefined : { scale: 1.05 }}
+                    whileTap={reducedMotion ? undefined : { scale: 0.95 }}
                     aria-label="Next month"
                   >
                     <CaretRight size={18} weight="bold" />
@@ -342,7 +550,11 @@ ${event.pelican_context || 'Analyze this event. What historically happens around
                   {DAY_LABELS.map((label) => (
                     <div
                       key={label}
-                      className="text-center text-[11px] uppercase font-medium tracking-wider text-[var(--text-muted)] py-1.5"
+                      className="text-center text-[10px] uppercase font-medium py-1.5"
+                      style={{
+                        color: 'var(--text-muted)',
+                        letterSpacing: '1px',
+                      }}
                     >
                       {label}
                     </div>
@@ -350,55 +562,77 @@ ${event.pelican_context || 'Analyze this event. What historically happens around
                 </div>
 
                 {/* Day grid */}
-                <div className="grid grid-cols-7 px-2 pb-2 gap-px">
+                <div className="grid grid-cols-7 px-2 pb-2 gap-[1px]">
                   {calendarDays.map((day) => {
                     const dayEvents = eventsByDate[day.date] || []
                     const isSelected = selectedDate === day.date
                     const hasEvents = dayEvents.length > 0
 
                     return (
-                      <motion.button
+                      <button
                         key={day.date}
                         type="button"
                         onClick={() =>
                           setSelectedDate(isSelected ? null : day.date)
                         }
                         className={cn(
-                          'relative min-h-[60px] sm:min-h-[68px] rounded-lg p-[6px_8px] cursor-pointer',
+                          'relative min-h-[52px] rounded-lg p-[6px_8px] cursor-pointer',
                           'transition-all duration-150 text-left',
-                          'border',
-                          !day.isCurrentMonth && 'opacity-40',
+                          !day.isCurrentMonth && 'opacity-30',
                           day.isToday && !isSelected
-                            ? 'border-2 border-[var(--accent-primary)]'
+                            ? 'border-2'
                             : isSelected
-                              ? 'bg-[var(--accent-dim)] border-[var(--accent-primary)]'
-                              : hasEvents
-                                ? 'border-[var(--border-default)] hover:border-[var(--border-hover)] hover:bg-[rgba(255,255,255,0.02)]'
-                                : 'border-[var(--border-subtle)] hover:border-[var(--border-hover)] hover:bg-[rgba(255,255,255,0.02)]'
+                              ? 'border'
+                              : 'border',
                         )}
-                        whileTap={{ scale: 0.97 }}
+                        style={{
+                          borderColor: day.isToday && !isSelected
+                            ? 'var(--accent-primary)'
+                            : isSelected
+                              ? 'var(--accent-primary)'
+                              : 'var(--border-subtle)',
+                          backgroundColor: isSelected
+                            ? 'var(--accent-dim)'
+                            : 'transparent',
+                          borderWidth: day.isToday && !isSelected ? '2px' : '1px',
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!isSelected && !day.isToday) {
+                            e.currentTarget.style.backgroundColor = 'var(--bg-elevated)'
+                            e.currentTarget.style.borderColor = 'var(--border-hover)'
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!isSelected && !day.isToday) {
+                            e.currentTarget.style.backgroundColor = 'transparent'
+                            e.currentTarget.style.borderColor = 'var(--border-subtle)'
+                          }
+                        }}
                       >
                         {/* Day number */}
                         <span
                           className={cn(
-                            'block text-[13px] font-mono tabular-nums font-medium',
-                            day.isToday
-                              ? 'text-[var(--accent-primary)]'
-                              : day.isCurrentMonth
-                                ? 'text-[var(--text-primary)]'
-                                : 'text-[var(--text-muted)]'
+                            'block text-[12px] font-mono tabular-nums font-medium',
                           )}
+                          style={{
+                            color: day.isToday
+                              ? 'var(--accent-primary)'
+                              : day.isCurrentMonth
+                                ? 'var(--text-secondary)'
+                                : 'var(--text-muted)',
+                            fontWeight: day.isToday ? 600 : 500,
+                          }}
                         >
                           {day.day}
                         </span>
 
                         {/* Event dots */}
-                        {dayEvents.length > 0 && (
-                          <div className="flex gap-[3px] mt-1.5 flex-wrap">
+                        {hasEvents && (
+                          <div className="flex gap-[3px] mt-1 flex-wrap">
                             {dayEvents.slice(0, 3).map((evt) => (
                               <span
                                 key={evt.id}
-                                className="block w-[6px] h-[6px] rounded-full flex-shrink-0"
+                                className="block w-[5px] h-[5px] rounded-full flex-shrink-0"
                                 style={{
                                   backgroundColor: EVENT_TYPE_COLORS[evt.event_type],
                                 }}
@@ -406,13 +640,16 @@ ${event.pelican_context || 'Analyze this event. What historically happens around
                               />
                             ))}
                             {dayEvents.length > 3 && (
-                              <span className="text-[9px] font-mono text-[var(--text-muted)] leading-[6px] ml-0.5">
+                              <span
+                                className="text-[8px] font-mono leading-[5px] ml-0.5"
+                                style={{ color: 'var(--text-muted)' }}
+                              >
                                 +{dayEvents.length - 3}
                               </span>
                             )}
                           </div>
                         )}
-                      </motion.button>
+                      </button>
                     )
                   })}
                 </div>
@@ -424,10 +661,13 @@ ${event.pelican_context || 'Analyze this event. What historically happens around
                   ([type, color]) => (
                     <div key={type} className="flex items-center gap-1.5">
                       <span
-                        className="block w-[6px] h-[6px] rounded-full"
+                        className="block w-[5px] h-[5px] rounded-full"
                         style={{ backgroundColor: color }}
                       />
-                      <span className="text-[11px] text-[var(--text-muted)]">
+                      <span
+                        className="text-[10px]"
+                        style={{ color: 'var(--text-muted)' }}
+                      >
                         {EVENT_TYPE_LABELS[type]}
                       </span>
                     </div>
@@ -436,19 +676,28 @@ ${event.pelican_context || 'Analyze this event. What historically happens around
               </div>
             </div>
 
-            {/* Right panel: Event list (45%) */}
+            {/* ---- Right panel: Event list (45%) ---- */}
             <div className="flex-[45] min-w-0">
               {/* Panel header */}
               <div className="mb-4">
-                <h2 className="text-[15px] font-semibold text-[var(--text-primary)]">
+                <h2
+                  className="text-[15px] font-semibold"
+                  style={{ color: 'var(--text-primary)' }}
+                >
                   {selectedDate ? formatFullDate(selectedDate) : 'Upcoming Events'}
                 </h2>
                 {selectedDate && (
                   <button
                     type="button"
                     onClick={() => setSelectedDate(null)}
-                    className="text-[12px] text-[var(--accent-primary)] hover:text-[var(--accent-hover)]
-                      cursor-pointer transition-colors duration-150 mt-1"
+                    className="text-[12px] cursor-pointer transition-colors duration-150 mt-1"
+                    style={{ color: 'var(--accent-primary)' }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = 'var(--accent-hover)'
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = 'var(--accent-primary)'
+                    }}
                   >
                     Show all upcoming
                   </button>
@@ -479,18 +728,34 @@ ${event.pelican_context || 'Analyze this event. What historically happens around
                     />
                   </motion.div>
                 ) : (
-                  <div className="flex flex-col gap-3">
+                  <div
+                    className="flex flex-col themed-scroll"
+                    style={{
+                      gap: 'var(--space-card-gap)',
+                      maxHeight: 'calc(100vh - 240px)',
+                      overflowY: 'auto',
+                      paddingRight: '4px',
+                    }}
+                  >
                     {displayEvents.map((event, index) => (
                       <motion.div
                         key={event.id}
-                        initial={{ opacity: 0, y: 12 }}
+                        initial={
+                          reducedMotion
+                            ? { opacity: 1 }
+                            : { opacity: 0, y: 12 }
+                        }
                         animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -8 }}
+                        exit={
+                          reducedMotion
+                            ? { opacity: 0 }
+                            : { opacity: 0, y: -8 }
+                        }
                         transition={{
                           duration: 0.25,
                           delay: Math.min(index * 0.05, 0.3),
                         }}
-                        layout
+                        layout={!reducedMotion}
                       >
                         <EventCard
                           event={event}
@@ -505,100 +770,6 @@ ${event.pelican_context || 'Analyze this event. What historically happens around
           </div>
         )}
       </div>
-    </div>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// Event card component
-// ---------------------------------------------------------------------------
-
-interface EventCardProps {
-  event: CalendarEventEnriched
-  onPelicanClick: () => void
-}
-
-function EventCard({ event, onPelicanClick }: EventCardProps) {
-  const typeColor = EVENT_TYPE_COLORS[event.event_type]
-  const typeLabel = EVENT_TYPE_LABELS[event.event_type]
-  const impactCfg = IMPACT_CONFIG[event.impact]
-
-  return (
-    <div
-      className="relative rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)]
-        p-4 transition-all duration-150 hover:border-[var(--border-hover)]"
-    >
-      {/* Pelican icon top-right */}
-      <div className="absolute top-2 right-2">
-        <PelicanIcon onClick={onPelicanClick} size={16} />
-      </div>
-
-      {/* Event type pill + impact badge */}
-      <div className="flex items-center gap-2 mb-2 pr-12">
-        <span
-          className="inline-block px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide"
-          style={{
-            backgroundColor: `${typeColor}20`,
-            color: typeColor,
-          }}
-        >
-          {typeLabel}
-        </span>
-        <span
-          className={cn(
-            'inline-block px-2 py-0.5 rounded text-[10px] font-medium',
-            impactCfg.className
-          )}
-        >
-          {impactCfg.label}
-        </span>
-      </div>
-
-      {/* Title */}
-      <h3 className="text-[15px] font-semibold text-[var(--text-primary)] leading-tight mb-1.5 pr-10">
-        {event.title}
-      </h3>
-
-      {/* Date */}
-      <p className="text-[12px] font-mono tabular-nums text-[var(--text-muted)] mb-2">
-        {formatEventDate(event.event_date)} at {formatEventTime(event.event_date)}
-      </p>
-
-      {/* Asset pill + portfolio badge */}
-      {event.asset && (
-        <div className="flex items-center gap-2 mb-2">
-          <span className="inline-block px-2 py-0.5 rounded text-[11px] font-semibold font-mono text-[var(--text-secondary)] bg-[rgba(255,255,255,0.06)]">
-            {event.asset}
-          </span>
-          {event.user_holds && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium text-[var(--accent-primary)] bg-[var(--accent-dim)]">
-              <Lightning size={10} weight="fill" />
-              In your portfolio
-            </span>
-          )}
-        </div>
-      )}
-
-      {/* Description */}
-      {event.description && (
-        <p className="text-[13px] text-[var(--text-secondary)] leading-relaxed mb-2">
-          {event.description}
-        </p>
-      )}
-
-      {/* Source link */}
-      {event.source_url && event.source && (
-        <a
-          href={event.source_url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 text-[11px] text-[var(--accent-primary)]
-            hover:text-[var(--accent-hover)] transition-colors duration-150"
-        >
-          {event.source}
-          <ArrowSquareOut size={11} weight="regular" />
-        </a>
-      )}
-    </div>
+    </motion.div>
   )
 }

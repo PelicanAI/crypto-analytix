@@ -1,8 +1,8 @@
 'use client'
 
 import { Suspense, useCallback, useEffect, useRef, useMemo } from 'react'
-import { motion } from 'framer-motion'
-import { Lightning, ArrowClockwise, Funnel } from '@phosphor-icons/react'
+import { motion, useReducedMotion } from 'framer-motion'
+import { Lightning, ArrowClockwise, Funnel, CircleNotch } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 import { useSignals } from '@/hooks/use-signals'
 import { usePortfolio } from '@/hooks/use-portfolio'
@@ -12,7 +12,6 @@ import { CTSignalCard } from '@/components/signals/ct-signal-card'
 import { WalletSignalCard } from '@/components/signals/wallet-signal-card'
 import { MacroTranslationCard } from '@/components/signals/macro-translation-card'
 import { EmptyState } from '@/components/shared/empty-state'
-import { LoadingSkeleton } from '@/components/shared/loading-skeleton'
 import { LiveDot } from '@/components/shared/live-dot'
 import { formatCurrency, formatPercentWithSign } from '@/lib/formatters'
 import type { SignalFilter, SignalFeedItem, AnalystPost, CTSignal, WalletSignal, MacroTranslation } from '@/types/signals'
@@ -30,12 +29,26 @@ const FILTER_TABS: { key: SignalFilter; label: string }[] = [
 
 const ASSET_FILTER_OPTIONS = ['BTC', 'ETH', 'SOL', 'LINK', 'AVAX']
 
+/* ─── Loading skeleton ─── */
+function SignalCardSkeleton() {
+  return (
+    <div
+      className="shimmer rounded-xl h-[140px] w-full"
+      style={{
+        borderLeft: '3px solid var(--border-subtle)',
+      }}
+    />
+  )
+}
+
 function SignalsLoadingState() {
   return (
     <div className="px-[var(--space-page-x)] py-[var(--space-page-y)]">
       <div className="max-w-[760px] mx-auto">
-        <div className="flex flex-col gap-3">
-          <LoadingSkeleton variant="card" count={4} />
+        <div className="flex flex-col gap-[var(--space-card-gap)]">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <SignalCardSkeleton key={i} />
+          ))}
         </div>
       </div>
     </div>
@@ -51,6 +64,7 @@ export default function SignalsPage() {
 }
 
 function SignalsPageContent() {
+  const reducedMotion = useReducedMotion()
   const {
     signals,
     isLoading,
@@ -218,13 +232,25 @@ Expand on this cross-asset relationship. How reliable is this correlation histor
     [portfolioAssets]
   )
 
+  const pageAnimation = reducedMotion
+    ? { initial: {}, animate: {} }
+    : {
+        initial: { opacity: 0, y: 8 },
+        animate: { opacity: 1, y: 0 },
+      }
+
   return (
-    <div className="px-[var(--space-page-x)] py-[var(--space-page-y)]">
+    <motion.div
+      className="px-[var(--space-page-x)] py-[var(--space-page-y)]"
+      initial={pageAnimation.initial}
+      animate={pageAnimation.animate}
+      transition={{ duration: 0.3 }}
+    >
       <div className="max-w-[760px] mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-3">
-            <h1 className="text-[20px] font-semibold text-[var(--text-primary)]">Signals</h1>
+            <h1 className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>Signals</h1>
             <div className="flex items-center gap-1.5">
               <LiveDot size={6} />
               <span className="text-[11px] text-[var(--text-muted)]">Live</span>
@@ -233,39 +259,70 @@ Expand on this cross-asset relationship. How reliable is this correlation histor
           <button
             type="button"
             onClick={() => refresh()}
-            className="flex items-center justify-center w-8 h-8 rounded-lg border border-[var(--border-subtle)] cursor-pointer transition-all duration-150 hover:border-[var(--border-hover)] hover:bg-[rgba(255,255,255,0.03)]"
+            className={cn(
+              'flex items-center justify-center w-8 h-8 rounded-lg border cursor-pointer',
+              'transition-all duration-150',
+              'hover:bg-[rgba(255,255,255,0.03)]',
+            )}
+            style={{
+              borderColor: 'var(--border-subtle)',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--border-hover)' }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border-subtle)' }}
             title="Refresh signals"
           >
             <ArrowClockwise size={16} weight="regular" className="text-[var(--text-secondary)]" />
           </button>
         </div>
 
-        {/* Filter tabs */}
-        <div className="flex items-center gap-1 mb-4 border-b border-[var(--border-subtle)]">
-          {FILTER_TABS.map((tab) => (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => setFilter(tab.key)}
-              className={cn(
-                'px-3 py-2 text-[13px] font-medium transition-all duration-150 cursor-pointer',
-                'border-b-2 -mb-px',
-                filter === tab.key
-                  ? 'text-[var(--accent-primary)] border-[var(--accent-primary)]'
-                  : 'text-[var(--text-muted)] border-transparent hover:text-[var(--text-secondary)]'
-              )}
-            >
-              {tab.label}
-            </button>
-          ))}
+        {/* Filter tabs — pill container */}
+        <div className="flex items-center gap-3 mb-5">
+          <div
+            className="flex items-center gap-1 rounded-xl p-1"
+            style={{
+              backgroundColor: 'var(--bg-surface)',
+              border: '1px solid var(--border-subtle)',
+            }}
+          >
+            {FILTER_TABS.map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setFilter(tab.key)}
+                className={cn(
+                  'px-4 py-[7px] rounded-lg text-[13px] font-medium cursor-pointer',
+                  'transition-all duration-150',
+                  filter === tab.key
+                    ? 'text-[var(--text-primary)] shadow-[inset_0_1px_2px_rgba(0,0,0,0.3)]'
+                    : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]',
+                )}
+                style={filter === tab.key ? {
+                  backgroundColor: 'var(--bg-elevated)',
+                } : undefined}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
 
           {/* Asset filter dropdown */}
-          <div className="ml-auto flex items-center gap-1.5 pb-1">
+          <div className="flex items-center gap-1.5 ml-auto">
             <Funnel size={14} weight="regular" className="text-[var(--text-muted)]" />
             <select
               value={assetFilter || ''}
               onChange={(e) => setAssetFilter(e.target.value || null)}
-              className="text-[12px] bg-transparent border border-[var(--border-subtle)] rounded px-1.5 py-0.5 text-[var(--text-secondary)] cursor-pointer focus:outline-none focus:border-[var(--accent-primary)]"
+              className={cn(
+                'text-[12px] rounded-lg px-2.5 py-1.5 cursor-pointer',
+                'transition-all duration-150',
+                'focus:outline-none',
+              )}
+              style={{
+                backgroundColor: 'var(--bg-surface)',
+                border: '1px solid var(--border-subtle)',
+                color: 'var(--text-secondary)',
+              }}
+              onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--accent-primary)' }}
+              onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--border-subtle)' }}
             >
               <option value="">All assets</option>
               {ASSET_FILTER_OPTIONS.map((asset) => (
@@ -275,10 +332,12 @@ Expand on this cross-asset relationship. How reliable is this correlation histor
           </div>
         </div>
 
-        {/* Loading state */}
+        {/* Loading state — 5 shimmer cards */}
         {isLoading && signals.length === 0 && (
-          <div className="flex flex-col gap-3">
-            <LoadingSkeleton variant="card" count={4} />
+          <div className="flex flex-col gap-[var(--space-card-gap)]">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <SignalCardSkeleton key={i} />
+            ))}
           </div>
         )}
 
@@ -297,55 +356,79 @@ Expand on this cross-asset relationship. How reliable is this correlation histor
 
         {/* Signal feed */}
         {signals.length > 0 && (
-          <div className="flex flex-col gap-3">
-            {signals.map((item, index) => (
-              <motion.div
-                key={item.data.id}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.25, delay: Math.min(index * 0.04, 0.3) }}
-              >
-                {item.type === 'analyst' && (
-                  <AnalystCard
-                    post={item.data}
-                    onPelicanClick={() => handlePelicanClick(item)}
-                    isPortfolioAsset={isPortfolioRelevant(item)}
-                  />
-                )}
-                {item.type === 'ct' && (
-                  <CTSignalCard
-                    signal={item.data}
-                    onPelicanClick={() => handlePelicanClick(item)}
-                    isPortfolioAsset={isPortfolioRelevant(item)}
-                  />
-                )}
-                {item.type === 'onchain' && (
-                  <WalletSignalCard
-                    signal={item.data}
-                    onPelicanClick={() => handlePelicanClick(item)}
-                    isPortfolioAsset={isPortfolioRelevant(item)}
-                  />
-                )}
-                {item.type === 'macro' && (
-                  <MacroTranslationCard
-                    translation={item.data}
-                    onPelicanClick={() => handlePelicanClick(item)}
-                    isPortfolioAsset={isPortfolioRelevant(item)}
-                  />
-                )}
-              </motion.div>
-            ))}
+          <div className="flex flex-col gap-[var(--space-card-gap)]">
+            {signals.map((item, index) => {
+              const cardAnimation = reducedMotion
+                ? { initial: {}, animate: {} }
+                : {
+                    initial: { opacity: 0, y: 12 },
+                    animate: { opacity: 1, y: 0 },
+                  }
+
+              return (
+                <motion.div
+                  key={item.data.id}
+                  initial={cardAnimation.initial}
+                  animate={cardAnimation.animate}
+                  transition={reducedMotion ? { duration: 0 } : { duration: 0.25, delay: Math.min(index * 0.04, 0.3) }}
+                >
+                  {item.type === 'analyst' && (
+                    <AnalystCard
+                      post={item.data}
+                      onPelicanClick={() => handlePelicanClick(item)}
+                      isPortfolioAsset={isPortfolioRelevant(item)}
+                    />
+                  )}
+                  {item.type === 'ct' && (
+                    <CTSignalCard
+                      signal={item.data}
+                      onPelicanClick={() => handlePelicanClick(item)}
+                      isPortfolioAsset={isPortfolioRelevant(item)}
+                    />
+                  )}
+                  {item.type === 'onchain' && (
+                    <WalletSignalCard
+                      signal={item.data}
+                      onPelicanClick={() => handlePelicanClick(item)}
+                      isPortfolioAsset={isPortfolioRelevant(item)}
+                    />
+                  )}
+                  {item.type === 'macro' && (
+                    <MacroTranslationCard
+                      translation={item.data}
+                      onPelicanClick={() => handlePelicanClick(item)}
+                      isPortfolioAsset={isPortfolioRelevant(item)}
+                    />
+                  )}
+                </motion.div>
+              )
+            })}
           </div>
         )}
 
         {/* Load more sentinel */}
         <div ref={sentinelRef} className="h-4" />
+
+        {/* Loading more spinner */}
         {isLoadingMore && (
           <div className="flex justify-center py-4">
-            <span className="text-[12px] text-[var(--text-muted)]">Loading more...</span>
+            <CircleNotch
+              size={20}
+              weight="bold"
+              className="text-[var(--accent-primary)] animate-spin"
+            />
+          </div>
+        )}
+
+        {/* All caught up */}
+        {!isLoadingMore && !hasMore && signals.length > 0 && (
+          <div className="flex justify-center py-4">
+            <span className="text-[12px] text-[var(--text-muted)]">
+              You&apos;re all caught up
+            </span>
           </div>
         )}
       </div>
-    </div>
+    </motion.div>
   )
 }

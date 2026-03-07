@@ -20,40 +20,55 @@ interface MacroTranslationCardProps {
 }
 
 export function MacroTranslationCard({ translation, onPelicanClick, isPortfolioAsset }: MacroTranslationCardProps) {
+  // Glow when portfolio relevant
+  const shouldGlow = isPortfolioAsset === true
+
   return (
     <div
       className={cn(
-        'relative rounded-lg border border-[var(--border-subtle)] p-4',
-        'bg-[var(--bg-surface)] transition-all duration-150',
-        'hover:border-[var(--border-hover)] hover:shadow-[0_2px_12px_rgba(0,0,0,0.3)]',
-        'border-l-2',
-        isPortfolioAsset ? 'border-l-[var(--accent-primary)]' : 'border-l-[var(--data-warning)]'
+        'relative rounded-xl border border-[var(--border-subtle)] p-4',
+        'transition-all duration-200',
+        'hover:border-[var(--border-hover)]',
       )}
+      style={{
+        background: `linear-gradient(135deg, rgba(245,158,11,0.04) 0%, var(--bg-surface) 60%)`,
+        borderLeft: '3px solid var(--data-warning)',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.2), 0 1px 2px rgba(0,0,0,0.3)',
+      }}
     >
       {/* Header */}
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2.5 flex-wrap">
-          <span className="text-[10px] uppercase tracking-[1.5px] font-semibold text-[var(--data-warning)]">
+          <span
+            className="text-[10px] uppercase font-semibold"
+            style={{
+              color: 'var(--data-warning)',
+              letterSpacing: '1.5px',
+            }}
+          >
             Macro Translation
           </span>
-          {translation.direction && DIRECTION_SEVERITY[translation.direction] && (
-            <SeverityTag type={DIRECTION_SEVERITY[translation.direction]} />
-          )}
+          {/* ForexAnalytix badge */}
           <span
-            className="inline-flex items-center px-[6px] py-[1px] rounded text-[9px] font-medium uppercase tracking-wider"
+            className="inline-flex items-center px-[6px] py-[1px] rounded text-[10px] font-semibold"
             style={{
               color: 'var(--accent-primary)',
-              backgroundColor: 'var(--accent-dim)',
+              backgroundColor: 'rgba(29,161,196,0.08)',
               border: '1px solid var(--accent-muted)',
             }}
           >
             ForexAnalytix
           </span>
-          <span className="text-[11px] text-[var(--text-muted)]">
+          {translation.direction && DIRECTION_SEVERITY[translation.direction] && (
+            <SeverityTag type={DIRECTION_SEVERITY[translation.direction]} />
+          )}
+        </div>
+        <div className="flex items-center gap-1 shrink-0">
+          <span className="font-mono text-[11px] tabular-nums text-[var(--text-muted)]">
             {formatTimeAgo(translation.created_at)}
           </span>
+          <PelicanIcon onClick={onPelicanClick} size={18} glow={shouldGlow} />
         </div>
-        <PelicanIcon onClick={onPelicanClick} size={18} />
       </div>
 
       {/* Source title */}
@@ -69,14 +84,21 @@ export function MacroTranslationCard({ translation, onPelicanClick, isPortfolioA
       )}
 
       {/* Crypto translation */}
-      <p className="text-[13px] text-[var(--text-secondary)] leading-relaxed mb-3">
+      <p className="text-[13px] text-[var(--text-secondary)] leading-[1.7] mb-3">
         {translation.crypto_translation}
       </p>
 
-      {/* Bottom: affected assets + macro indicator */}
-      <div className="flex items-center gap-2 flex-wrap">
+      {/* Bottom: macro indicator + affected assets + portfolio badge */}
+      <div className="flex items-center gap-1.5 flex-wrap">
         {translation.macro_indicator && (
-          <span className="inline-flex items-center px-[6px] py-[1px] rounded text-[9px] font-mono font-bold uppercase tracking-wider bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--text-secondary)]">
+          <span
+            className="inline-flex items-center px-[6px] py-[1px] rounded text-[9px] font-mono font-bold uppercase tracking-wider"
+            style={{
+              color: 'var(--text-secondary)',
+              backgroundColor: 'var(--bg-elevated)',
+              border: '1px solid var(--border-subtle)',
+            }}
+          >
             {translation.macro_indicator}
           </span>
         )}
@@ -97,7 +119,13 @@ export function MacroTranslationCard({ translation, onPelicanClick, isPortfolioA
           )
         })}
         {isPortfolioAsset && (
-          <span className="text-[9px] uppercase tracking-wider text-[var(--accent-primary)] font-medium">
+          <span
+            className="inline-flex items-center px-2 py-[2px] rounded-full text-[10px] font-medium"
+            style={{
+              color: 'var(--accent-primary)',
+              backgroundColor: 'var(--accent-dim)',
+            }}
+          >
             In your portfolio
           </span>
         )}
